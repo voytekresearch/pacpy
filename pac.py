@@ -129,13 +129,13 @@ def mi_tort(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
 
     phase_lo = np.arange(-180, 180, 20)
     mean_amp = np.zeros(len(phase_lo))
-    for b in range(len(phase_lo)):
+    for b in xrange(len(phase_lo)):
         phaserange = np.logical_and(phadeg >= phase_lo[b],
                                     phadeg < (phase_lo[b] + 20))
         mean_amp[b] = np.mean(amp[phaserange])
 
     p_j = np.zeros(len(phase_lo))
-    for b in range(len(phase_lo)):
+    for b in xrange(len(phase_lo)):
         p_j[b] = mean_amp[b] / sum(mean_amp)
         h = -np.sum(p_j * np.log10(p_j))
         h_max = np.log10(18)  # TODO explain magic number
@@ -193,10 +193,11 @@ def glm(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
     X = sm.add_constant(X, prepend=False)
 
     # Run GLM
-    my_glm = sm.GLM(y, X)
-    res = my_glm.fit()
+    glm = sm.GLM(y, X)
+    res = glm.fit()
     # print(res.summary())
-    # Calculate R^2 value. Equivalent to mdl.Rsquared.Ordinary in MATLAB
+    # Calculate R^2 value. 
+    # Equivalent to mdl.Rsquared.Ordinary in MATLAB
 
     # and actually calculate PAC
     pac = 1 - np.sum(res.resid_deviance ** 2) / np.sum(
@@ -253,7 +254,8 @@ def mi_canolty(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
 
 
 # TODO remove list arg
-# TODO SC can we adapt this to take a filterfn/kwargs, and if we can do
+# TODO SC can we adapt this to take a 
+# filterfn/kwargs, and if we can do
 # we want to?
 def otc(lohi, f_hi, f_step, w=7, event_prc=95, fs=1000,
         t_modsig=(-1, 1), t_buffer=.01):
@@ -310,7 +312,7 @@ def otc(lohi, f_hi, f_step, w=7, event_prc=95, fs=1000,
     # z-score and find the high frequency activity event times
     F = len(f0s)
     a_events = np.zeros(F, dtype=object)
-    for f in range(F):
+    for f in xrange(F):
         tf[f] = stats.mstats.zscore(tf[f])
         a_events[f] = _peaktimes(tf[f], prc=event_prc, t_buffer=t_buffer)
 
@@ -323,19 +325,23 @@ def otc(lohi, f_hi, f_step, w=7, event_prc=95, fs=1000,
 
     # TODO SC: could you comment this a bit more. Not sure what the hell
     # is a happening.
-    for f in range(F):
+    for f in xrange(F):
         mask = np.ones(len(a_events[f]), dtype=bool)
         mask[a_events[f] <= samp_modsig[-1]] = False
         mask[a_events[f] >= (len(lohi) - samp_modsig[-1])] = False
+        
         a_events[f] = a_events[f][mask]
         E = len(a_events[f])
-        for e in range(E):
+        
+        for e in xrange(E):
             cur_ecog = lohi[a_events[f][e] + samp_modsig]
             mod_sig[f] = mod_sig[f] + cur_ecog / E
 
     mod_strength = np.zeros(F)
-    for f in range(F):
+    
+    for f in xrange(F):
         mod_strength = np.max(mod_sig[f]) - np.min(mod_sig[f])
+    
     pac = np.max(mod_strength)
 
     # TODO SC what should this be returning?
@@ -349,21 +355,20 @@ def _peaktimes(x, prc=95, t_buffer=.01, fs=1000):
     Parameters
     ----------
     x : array
-        time series of power
+        Time series of power
     prc : float (in range 0-100)
         The percentile threshold of x for an event to be declares
     t_buffer : float
         Minimum time (seconds) in between events
     fs : float
         Sampling rate
-
     """
     samp_buffer = np.int(np.round(t_buffer * fs))
     hi = x > np.percentile(x, prc)
     event_intervals = _chunk_time(hi, samp_buffer=samp_buffer)
     E = np.int(np.size(event_intervals) / 2)
     events = np.zeros(E, dtype=object)
-    for e in range(E):
+    for e in xrange(E):
         temp = x[
             np.arange(event_intervals[e][0], event_intervals[e][1] + 1)]
         events[e] = event_intervals[e][0] + np.argmax(temp)
@@ -397,7 +402,6 @@ def _chunk_time(x, samp_buffer=0):
     _chunk_time([5,6,7,8,10,55,56], samp_buffer = 2)
         array([[ 5, 10],
                [55, 56]])
-
     """
     if type(x[0]) == np.bool_:
         Xs = np.arange(len(x))
@@ -408,8 +412,7 @@ def _chunk_time(x, samp_buffer=0):
     cur_samp = x[0]
     Nchunk = 0
     chunks = []
-    for i in np.arange(1, X):
-
+    for i in xrange(1, X):
         if x[i] > (cur_samp + samp_buffer + 1):
             if Nchunk == 0:
                 chunks = [cur_start, cur_samp]
@@ -435,7 +438,7 @@ def comodulogram(pha, amp=None, fs=1000, pac_method='mi_tort',
                  dp=2, da=4, p_range=(4, 50), a_range=(10, 200),
                  **kwargs):
 
-    raise NotImplementedError("TODO Adapt to pacpy and move to own submodule?")
+    raise NotImplementedError("Adapt to pacpy and move to own submodule?")
 
     """
     Calculate PAC for many small frequency bands
@@ -489,20 +492,22 @@ def comodulogram(pha, amp=None, fs=1000, pac_method='mi_tort',
 
     # Calculate PAC for every combination of P and A
     pacpal = np.zeros((P, A))
-    for p in range(P):
+    for p in xrange(P):
         flo = (f_phases[p], f_phases[p] + dp)
-        for a in range(A):
+        for a in xrange(A):
             # print p,a
             fhi = (f_amps[a], f_amps[a] + da)
             _, _, pacpal[p, a], _ = pac(pha, amp=amp, fs=fs,
                                         flo=flo, fhi=fhi,
-                                        pac_method=pac_method, **kwargs)
+                                        pac_method=pac_method, 
+                                        **kwargs)
 
     return pacpal
 
 
 def phaseamp_series(pha, amp=None, fs=1000,
-                    flo=(13, 30), fhi=(80, 200), **kwargs):
+                    flo=(13, 30), fhi=(80, 200), 
+                    **kwargs):
     """
     Calculate the time series of the phase and the time series of the
     amplitude
@@ -582,8 +587,6 @@ def pa_dist(pha, amp, n_bins=10):
     return dist
 
 
-#
-#
 # def pac(x_pha, x_amp = None,  fs = 1000,
 #         flo = (13, 30), fhi = (80, 200),
 #         pac_method = 'plv', **kwargs):
