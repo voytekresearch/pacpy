@@ -4,13 +4,16 @@ Functions to calculate phase-amplitude coupling.
 """
 from __future__ import division
 import numpy as np
-from pacpy.filt import *
+from scipy.signal import hilbert
+from scipy.stats.mstats import zscore
+from pacpy.filt import firf, butterf, morletT
+import statsmodels.api as sm
 
 
 def _x_sanity(lo=None, hi=None):
     if lo is not None:
-        if np.any(np.isnan(hi)):
-            raise ValueError("hi contains NaNs")
+        if np.any(np.isnan(lo)):
+            raise ValueError("lo contains NaNs")
 
     if hi is not None:
         if np.any(np.isnan(hi)):
@@ -36,7 +39,7 @@ def _range_sanity(f_lo=None, f_hi=None):
             raise ValueError("Elements in f_hi must be > 0")
 
 
-def plv(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
+def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the phase-locking value (PLV) method from prefiltered
     signals
@@ -45,12 +48,14 @@ def plv(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
     ----------
     lo : array-like, 1d
         The low frequency time-series to use as the phase component
-    high : array-like, 1d
+    hi : array-like, 1d
         The high frequency time-series to use as the amplitude component
     f_lo : (low, high), Hz
         The low frequency filtering range
-    f_high : (low, high), Hz
+    f_hi : (low, high), Hz
         The low frequency filtering range
+    fs : float
+        The sampling rate (default = 1000Hz)
     filterfn : function
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
@@ -68,22 +73,24 @@ def plv(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Filter setup
     if filterfn is None:
-        filterfn = fir  # TODO or whatever the default name is for plv
-        filter_kwargs = {}  # TODO
+        filterfn = firf
+        filter_kwargs = {}
 
     # Filter
-    lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-    hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+    xlo = filterfn(lo, f_lo, fs, **filter_kwargs)
+    xhi = filterfn(hi, f_hi, fs, **filter_kwargs)
+    amp = np.abs(hilbert(xhi))
+    xhiamplo = filterfn(amp, f_lo, fs, **filter_kwargs)
 
     # And PAC
-    pha = np.angle(hilbert(lo))
-    amp = np.angle(hilbert(hi))
-    pac = np.abs(np.sum(np.exp(1j * (pha - amp)))) / len(pha)
+    pha1 = np.angle(hilbert(xlo))
+    pha2 = np.angle(hilbert(xhiamplo))
+    pac = np.abs(np.sum(np.exp(1j * (pha1 - pha2)))) / len(lo)
 
     return pac
 
 
-def mi_tort(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
+def mi_tort(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the modulation index method from prefiltered
     signals
@@ -92,12 +99,14 @@ def mi_tort(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
     ----------
     lo : array-like, 1d
         The low frequency time-series to use as the phase component
-    high : array-like, 1d
-        The high frequency time-series to use as the amplitude component
+    hi : array-like, 1d
+        The high frequency time-series to ue as the amplitude component
     f_lo : (low, high), Hz
+        The low frequency filtering ranges
+    f_hi : (low, high), Hz
         The low frequency filtering range
-    f_high : (low, high), Hz
-        The low frequency filtering range
+    fs : float
+        The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
@@ -115,36 +124,40 @@ def mi_tort(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Filter setup
     if filterfn is None:
-        filterfn = fir  # TODO or whatever the default name is for mi_tort
-        filter_kwargs = {}  # TODO
+        filterfn = firf
+        filter_kwargs = {}
 
     # Filter
     lo = filterfn(lo, f_lo, fs, **filter_kwargs)
     hi = filterfn(hi, f_hi, fs, **filter_kwargs)
 
-    # PAC
+    # Calculate phase and amplitude time series
     amp = np.abs(hilbert(hi))
     pha = np.angle(hilbert(lo))
     phadeg = np.degrees(pha)
 
-    phase_lo = np.arange(-180, 180, 20)
+    # Calculate PAC
+    binsize = 20
+    Nbins = 360 / binsize
+    phase_lo = np.arange(-180, 180, binsize)
     mean_amp = np.zeros(len(phase_lo))
     for b in xrange(len(phase_lo)):
         phaserange = np.logical_and(phadeg >= phase_lo[b],
-                                    phadeg < (phase_lo[b] + 20))
+                                    phadeg < (phase_lo[b] + binsize))
         mean_amp[b] = np.mean(amp[phaserange])
 
     p_j = np.zeros(len(phase_lo))
     for b in xrange(len(phase_lo)):
         p_j[b] = mean_amp[b] / sum(mean_amp)
-        h = -np.sum(p_j * np.log10(p_j))
-        h_max = np.log10(18)  # TODO explain magic number
-        pac = (h_max - h) / h_max
+        
+    h = -np.sum(p_j * np.log10(p_j))
+    h_max = np.log10(Nbins)
+    pac = (h_max - h) / h_max
 
-        return pac
+    return pac
 
 
-def glm(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
+def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the generalized linear model (GLM) method
 
@@ -152,12 +165,14 @@ def glm(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
     ----------
     lo : array-like, 1d
         The low frequency time-series to use as the phase component
-    high : array-like, 1d
+    hi : array-like, 1d
         The high frequency time-series to use as the amplitude component
     f_lo : (low, high), Hz
         The low frequency filtering range
     f_high : (low, high), Hz
         The low frequency filtering range
+    fs : float
+        The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
@@ -175,8 +190,8 @@ def glm(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Filter series
     if filterfn is None:
-        filterfn = fir  # TODO or whatever the default name is for glm
-        filter_kwargs = {}  # TODO
+        filterfn = firf
+        filter_kwargs = {}
 
     # Filter
     lo = filterfn(lo, f_lo, fs, **filter_kwargs)
@@ -195,18 +210,15 @@ def glm(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
     # Run GLM
     glm = sm.GLM(y, X)
     res = glm.fit()
-    # print(res.summary())
-    # Calculate R^2 value. 
-    # Equivalent to mdl.Rsquared.Ordinary in MATLAB
 
-    # and actually calculate PAC
+    # Calculate PAC from GLM residuals
     pac = 1 - np.sum(res.resid_deviance ** 2) / np.sum(
         (amp - np.mean(amp)) ** 2)
 
     return pac
 
 
-def mi_canolty(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
+def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the modulation index (MI) method defined in Canolty,
     2006
@@ -215,12 +227,14 @@ def mi_canolty(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
     ----------
     lo : array-like, 1d
         The low frequency time-series to use as the phase component
-    high : array-like, 1d
+    hi : array-like, 1d
         The high frequency time-series to use as the amplitude component
     f_lo : (low, high), Hz
         The low frequency filtering range
-    f_high : (low, high), Hz
+    f_hi : (low, high), Hz
         The low frequency filtering range
+    fs : float
+        The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
@@ -238,8 +252,8 @@ def mi_canolty(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Filter series
     if filterfn is None:
-        filterfn = fir  # TODO or whatever the default name is for plv
-        filter_kwargs = {}  # TODO
+        filterfn = firf
+        filter_kwargs = {}
 
     # Filter
     lo = filterfn(lo, f_lo, fs, **filter_kwargs)
@@ -253,44 +267,46 @@ def mi_canolty(lo, hi, f_hi, f_lo, fs=1000, filterfn=None, filter_kwargs=None):
     return pac
 
 
-# TODO remove list arg
-# TODO SC can we adapt this to take a 
-# filterfn/kwargs, and if we can do
-# we want to?
-def otc(lohi, f_hi, f_step, w=7, event_prc=95, fs=1000,
-        t_modsig=(-1, 1), t_buffer=.01):
+def otc(x, f_hi, f_step, fs=1000,
+        w=7, event_prc=95, t_modsig=None, t_buffer=.01):
     """
     Calculate the oscillation-triggered coupling measure of phase-amplitude
     coupling from Dvorak, 2014.
 
     Parameters
     ----------
-    lohi : array
-        time series
+    x : array-like, 1d
+        The time series
+    f_hi : (low, high), Hz
+        The low frequency filtering range
+    f_step : float, Hz
+        The width of each frequency bin in the time-frequency representation
     fs : float
         Sampling rate
-    f0s : array
-        Frequencies in the time-frequency representation
     w : float
         Length of the filter in terms of the number of cycles of the
-        oscillation
-        whose frequency is the center of the bandpass filter
+        oscillation whose frequency is the center of the bandpass filter
     event_prc : float (in range 0-100)
         The percentile threshold of the power signal of an oscillation
         for an event to be declared
-    t_modsig : array (2x)
+    t_modsig : (min, max)
         Time (seconds) around an event to extract to define the modulation
         signal
     t_buffer : float
-        Minimum time (seconds) in between events
+        Minimum time (seconds) in between high frequency events
 
     Returns
     -------
-    x_tf : 2-dimensional array
+    pac : float
+        phase-amplitude coupling value
+    tf : 2-dimensional array
         time-frequency representation of input signal
     a_events : array
+        samples at which a high frequency event occurs
+    mod_sig : array
+        modulation signal (see Dvorak, 2014)
 
-    Algorithm
+    Algorithm (may be changed in the future)
     ---------
     * Calculate time-frequency representation
     * Define time locking events
@@ -300,51 +316,55 @@ def otc(lohi, f_hi, f_step, w=7, event_prc=95, fs=1000,
       equal to that maximal modulation strength
 
     """
+    
     # Arg check
-    _x_sanity(lohi, None)
+    _x_sanity(x, None)
     _range_sanity(None, f_hi)
-
-    f0s = np.arange(f_hi[0], f_hi[1], f_step)
+    
+    # Set default time range for modulatory signal
+    if t_modsig == None:
+        t_modsig = (-1,1)
 
     # Calculate the time-frequency representation
-    tf = morletT(lohi, f0s, w=w, fs=fs)
+    f0s = np.arange(f_hi[0], f_hi[1], f_step)
+    tf = morletT(x, f0s, w=w, fs=fs)
 
-    # z-score and find the high frequency activity event times
+    # Find the high frequency activity event times
     F = len(f0s)
     a_events = np.zeros(F, dtype=object)
     for f in xrange(F):
-        tf[f] = stats.mstats.zscore(tf[f])
+        tf[f] = zscore(tf[f])
         a_events[f] = _peaktimes(tf[f], prc=event_prc, t_buffer=t_buffer)
 
-    # Calculate the modulation signal, its amplitude, frequency, and its
-    # phase
+    # Calculate the modulation signal
     samp_modsig = np.arange(t_modsig[0] * fs, t_modsig[1] * fs)
     samp_modsig = samp_modsig.astype(int)
     S = len(samp_modsig)
     mod_sig = np.zeros([F, S])
 
-    # TODO SC: could you comment this a bit more. Not sure what the hell
-    # is a happening.
+    # For each frequency in the time-frequency representation, calculate a modulation signal
     for f in xrange(F):
+        # Exclude high frequency events that are too close to the signal
+        # boundaries to extract an entire modulation signal
         mask = np.ones(len(a_events[f]), dtype=bool)
         mask[a_events[f] <= samp_modsig[-1]] = False
-        mask[a_events[f] >= (len(lohi) - samp_modsig[-1])] = False
-        
+        mask[a_events[f] >= (len(x) - samp_modsig[-1])] = False
         a_events[f] = a_events[f][mask]
-        E = len(a_events[f])
         
+        # Calculate the average LFP around each high frequency event
+        E = len(a_events[f])
         for e in xrange(E):
-            cur_ecog = lohi[a_events[f][e] + samp_modsig]
+            cur_ecog = x[a_events[f][e] + samp_modsig]
             mod_sig[f] = mod_sig[f] + cur_ecog / E
 
+    # Calculate modulation strength, the range of the modulation signal
     mod_strength = np.zeros(F)
-    
     for f in xrange(F):
         mod_strength = np.max(mod_sig[f]) - np.min(mod_sig[f])
     
+    # Calculate PAC
     pac = np.max(mod_strength)
-
-    # TODO SC what should this be returning?
+    
     return pac, tf, a_events, mod_sig
 
 
@@ -433,56 +453,41 @@ def _chunk_time(x, samp_buffer=0):
     return chunks
 
 
-# TODO make mac_method a functional arg. Add a pac_params dist too.
-def comodulogram(pha, amp=None, fs=1000, pac_method='mi_tort',
-                 dp=2, da=4, p_range=(4, 50), a_range=(10, 200),
-                 **kwargs):
-
-    raise NotImplementedError("Adapt to pacpy and move to own submodule?")
-
+def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
+                 pac_method='mi_tort',
+                 filterfn=None, filter_kwargs=None):
     """
     Calculate PAC for many small frequency bands
-
-    Parameters
-    ----------
-    x_pha : array-like 1d
-        Time series containing the oscillation whose phase is modulating
-        (flo)
-    x_amp : array-like 1d
-        Time series containing the oscillation whose amplitude is
-        modulated (fhi)
-        Must be the same length as x_pha
-        If None: set equal to x_pha
+    
+    lo : array-like, 1d
+        The low frequency time-series to use as the phase component
+    hi : array-like, 1d
+        The high frequency time-series to use as the amplitude component
+    p_range : (low, high), Hz
+        The low frequency filtering range
+    a_range : (low, high), Hz
+        The high frequency filtering range
+    dp : float, Hz
+        Width of the low frequency filtering range for each PAC calculation
+    da : float, Hz
+        Width of the high frequency filtering range for each PAC calculation
     fs : float
-        Sampling rate of x_pha and x_amp
+        The sampling rate (default = 1000Hz)
     pac_method : string
         Method to calculate PAC.
         'mi_tort' - See Tort, 2008
-        'plv' - See Penny, 2010
+        'plv' - See Penny, 2008 or Tort, 2010
         'glm' - See Penny, 2008
-        'mi_canolty' - See Canolty, 2006
-    dp : float
-        step size and bandwidth for the low frequency band
-    da : float
-        step size and bandwidth for the high frequency band
-    p_range : array (2x1)
-        frequency range for the modulating oscillation (phase frequency)
-    a_range : array (2x1)
-        frequency range for the modulated oscillation (amplitude frequency)
-    **kwargs : dictionary
-        Parameters for PAC calculation or filtering
-
-    Returns
-    -------
-    pacpal : 2D array
-        PAC values for each phase and amplitude frequency band
+        'mi_canolty' - See Canolty, 2006        
+    filterfn : function
+        The filtering function, `filterfn(x, f_range, filter_kwargs)`
+    filter_kwargs : dict
+        Keyword parameters to pass to `filterfn(.)`
     """
-
-    # Define the time series used for the modulated oscillation
-    if amp == None:
-        amp = pha
-    if len(amp) != len(pha):
-        ValueError('Length of the two temporal signals must be the same')
+    
+    # Arg check
+    _x_sanity(lo, hi)
+    _range_sanity(p_range, a_range)
 
     # Calculate palette frequency parameters
     f_phases = np.arange(p_range[0], p_range[1], dp)
@@ -491,67 +496,76 @@ def comodulogram(pha, amp=None, fs=1000, pac_method='mi_tort',
     A = len(f_amps)
 
     # Calculate PAC for every combination of P and A
-    pacpal = np.zeros((P, A))
+    comod = np.zeros((P, A))
     for p in xrange(P):
-        flo = (f_phases[p], f_phases[p] + dp)
+        f_lo = (f_phases[p], f_phases[p] + dp)
+        
         for a in xrange(A):
-            # print p,a
-            fhi = (f_amps[a], f_amps[a] + da)
-            _, _, pacpal[p, a], _ = pac(pha, amp=amp, fs=fs,
-                                        flo=flo, fhi=fhi,
-                                        pac_method=pac_method, 
-                                        **kwargs)
+            f_hi = (f_amps[a], f_amps[a] + da)
+            
+            if pac_method == 'plv':
+                comod[p,a] = plv(lo, hi, f_lo, f_hi, fs=fs,
+                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
+            elif pac_method == 'mi_tort':
+                comod[p,a] = mi_tort(lo, hi, f_lo, f_hi, fs=fs,
+                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
+            elif pac_method == 'mi_canolty':
+                comod[p,a] = mi_canolty(lo, hi, f_lo, f_hi, fs=fs,
+                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
+            elif pac_method == 'glm':
+                comod[p,a] = glm(lo, hi, f_lo, f_hi, fs=fs,
+                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
+            else:
+                raise ValueError('Not a valid PAC method')
 
-    return pacpal
+    return comod
 
 
-def phaseamp_series(pha, amp=None, fs=1000,
-                    flo=(13, 30), fhi=(80, 200), 
-                    **kwargs):
+def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
-    Calculate the time series of the phase and the time series of the
-    amplitude
+    Calculate the phase and amplitude time series
 
     Parameters
     ----------
-    x_pha : array-like 1d
-        Time series containing the oscillation whose phase is modulating
-        (flo)
-    x_amp : array-like 1d
-        Time series containing the oscillation whose amplitude is
-        modulated (fhi)
-        Must be the same length as x_pha
-        If None: set equal to x_pha
+    lo : array-like, 1d
+        The low frequency time-series to use as the phase component
+    hi : array-like, 1d
+        The high frequency time-series to use as the amplitude component
+    f_lo : (low, high), Hz
+        The low frequency filtering range
+    f_hi : (low, high), Hz
+        The low frequency filtering range
     fs : float
-        Sampling rate of x_pha and x_amp
-    flo : 2-element list
-        Low and High cutoff frequencies for the modulating oscillation (Hz)
-    fhi : 2-element list
-        Low and High cutoff frequencies for the modulated oscillation (Hz)
-    **kwargs : dictionary
-        Parameters for PAC calculation or filtering
+        The sampling rate (default = 1000Hz)
+    filterfn : function
+        The filtering function, `filterfn(x, f_range, filter_kwargs)`
+    filter_kwargs : dict
+        Keyword parameters to pass to `filterfn(.)`
 
     Returns
     -------
-    pha : array
-        Phase time series
-    amp : array
-        Amplitude time series
-
+    pha : array-like, 1d
+        Time series of phase
+    amp : array-like, 1d
+        Time series of amplitude
     """
 
-    # Define the time series used for the modulated oscillation
-    if amp == None:
-        amp = pha
-    if len(amp) != len(pha):
-        ValueError('Length of the two temporal signals must be the same')
+    # Arg check
+    _x_sanity(lo, hi)
+    _range_sanity(f_lo, f_hi)
 
-    # Filter the signals
-    lo, hi = pac_filter(pha, amp, fs=fs, flo=flo, fhi=fhi, **kwargs)
+    # Filter setup
+    if filterfn is None:
+        filterfn = firf
+        filter_kwargs = {}
+
+    # Filter
+    xlo = filterfn(lo, f_lo, fs, **filter_kwargs)
+    xhi = filterfn(hi, f_hi, fs, **filter_kwargs)
 
     # Calculate phase time series and amplitude time series
-    amp = np.abs(hilbert(hi))
-    pha = np.angle(hilbert(lo))
+    pha = np.angle(hilbert(xlo))
+    amp = np.abs(hilbert(xhi))
 
     return pha, amp
 
@@ -585,71 +599,3 @@ def pa_dist(pha, amp, n_bins=10):
         dist[b] = np.mean(amp[t_phase])
 
     return dist
-
-
-# def pac(x_pha, x_amp = None,  fs = 1000,
-#         flo = (13, 30), fhi = (80, 200),
-#         pac_method = 'plv', **kwargs):
-#     """
-#     Calculate phase-amplitude coupling
-#
-#     Parameters
-#     ----------
-#     x_pha : array-like 1d
-#         Time series containing the oscillation whose phase is
-# modulating (flo)
-#     x_amp : array-like 1d
-#         Time series containing the oscillation whose amplitude is
-# modulated (fhi)
-#         Must be the same length as x_pha
-#         If None: set equal to x_pha
-#     fs : float
-#         Sampling rate of x_pha and x_amp
-#     flo : 2-element list
-#         Low and High cutoff frequencies for the modulating oscillation
-# (Hz)
-#     fhi : 2-element list
-#         Low and High cutoff frequencies for the modulated oscillation (Hz)
-#     pac_method : string
-#         Method to calculate PAC.
-#         'mi_tort' - See Tort, 2008
-#         'plv' - See Penny, 2010
-#         'glm' - See Penny, 2008
-#         'mi_canolty' - See Canolty, 2006
-#         'otc' - See Dvorak, 2014. Uses function defaults and only 1 signal.
-#     **kwargs : dictionary
-#         Parameters for PAC calculation or filtering
-#
-#     Returns
-#     -------
-#     pac : float
-#         Phase-amplitude coupling value
-#     """
-#
-# Define the time series used for the modulated oscillation
-#     if x_amp == None:
-#         x_amp = x_pha
-#     if len(x_amp) != len(x_pha):
-#         ValueError('Length of the two temporal signals must be the same')
-#
-# Filter the signals
-#     if pac_method == 'plv':
-#         xlo, xhi, xhiamplo = pac_filter(x_pha, x_amp, fs = fs, flo = flo, fhi = fhi, pac_method = pac_method, **kwargs)
-#     else:
-#         xlo, xhi = pac_filter(x_pha, x_amp, fs = fs, flo = flo, fhi = fhi, pac_method = pac_method, **kwargs)
-#
-# Calculate PAC
-#     if pac_method == 'plv':
-#         return pac_plv(xlo, xhiamplo)
-#     elif pac_method == 'mi_tort':
-#         return pac_mi_tort(xlo, xhi)
-#     elif pac_method == 'glm':
-#         return pac_glm(xlo, xhi)
-#     elif pac_method == 'mi_canolty':
-#         return pac_mi_canolty(xlo, xhi)
-#     elif pac_method == 'otc':
-#         _, _, _, pac = otc(x_pha, fs = fs, f0s = np.arange(fhi[0],fhi[1],4))
-#         return pac
-#     else:
-#         raise ValueError('Invalid PAC method')
-#
