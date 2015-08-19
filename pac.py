@@ -21,7 +21,7 @@ def _x_sanity(lo=None, hi=None):
 
     if (hi is not None) and (lo is not None):
         if lo.size != hi.size:
-            raise ValueError("lo and must be the same length")
+            raise ValueError("lo and hi must be the same length")
 
 
 def _range_sanity(f_lo=None, f_hi=None):
