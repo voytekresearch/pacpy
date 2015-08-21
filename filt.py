@@ -27,16 +27,38 @@ def firf(x, f_range, fs = 1000, w = 7, tw = .15):
     x_filt : array-like, 1d
         Filtered time series
     '''
-
-    cf = np.mean(f_range)
+    
+    if w <= 0:
+        raise ValueError('Number of cycles in a filter must be a positive number.')
+        
+    if np.logical_or(tw < 0, tw > 1):
+        raise ValueError('Transition width must be between 0 and 1.')        
+        
     nyq = fs/2
-    Ntaps = np.floor(w*fs/cf)
-
+    if np.any(np.array(f_range) > nyq):
+        raise ValueError('Filter frequencies must be below nyquist rate.')
+        
+    if np.any(np.array(f_range) < 0):
+        raise ValueError('Filter frequencies must be positive.')
+        
+    cf = np.mean(f_range)
+    Ntaps = np.floor(w * fs / cf)
+    if len(x) < Ntaps:
+        raise RuntimeError('Length of filter is loger than data. Provide more data or a shorter filter.')
+        
+    # Characterize desired filter
     f = [0, (1-tw)*f_range[0]/nyq, f_range[0]/nyq, f_range[1]/nyq, (1+tw)*f_range[1]/nyq, 1]
     m = [0,0,1,1,0,0]
+    if any(np.diff(f)<0):
+        raise RuntimeError('Invalid FIR filter parameters. Please decrease the transition width parameter.')
+    
+    # Perform filtering
     taps = firwin2(Ntaps, f, m)
     x_filt = filtfilt(taps,[1],x)
-
+    
+    if any(np.isnan(x_filt)):
+        raise RuntimeError('Filtered signal contains nans. Adjust filter parameters.')
+        
     return x_filt
 
 
@@ -58,11 +80,24 @@ def butterf(x, f_range, fs = 1000, N = 2):
     x_filt : array-like, 1d
         Filtered time series
     '''
-
+    
     nyq = fs/2
+    if np.any(np.array(f_range) > nyq):
+        raise ValueError('Filter frequencies must be below nyquist rate.')
+        
+    if np.any(np.array(f_range) < 0):
+        raise ValueError('Filter frequencies must be positive.')
+        
+    if np.logical_or(N != int(N), N <= 0):
+        raise ValueError('Order of filter must be a positive integer')
+
+    
     Wn = (f_range[0]/nyq, f_range[1]/nyq)
     b, a = butter(N, Wn, btype = 'bandpass')
     x_filt = filtfilt(b,a,x)
+    
+    if any(np.isnan(x_filt)):
+        raise RuntimeError('Filtered signal contains nans. Adjust filter parameters such as decreasing order.')
 
     return x_filt
 
@@ -107,18 +142,20 @@ def morletT(x, f0s, w = 7, fs = 1000, s = 1):
     -------
     mwt : 2-D array
         time-frequency representation of signal x
-
     '''
+    if w <= 0:
+        raise ValueError('Number of cycles in a filter must be a positive number.')
+        
     T = len(x)
     F = len(f0s)
     mwt = np.zeros([F,T],dtype=complex)
     for f in range(F):
-        mwt[f] = np.abs(trans_morlet(x, f0s[f], fs = fs, w = w, s = s))
+        mwt[f] = morletf(x, f0s[f], fs = fs, w = w, s = s)
 
     return mwt
 
 
-def trans_morlet(x, f0, fs = 1000, w = 7, s = 1, M = None):
+def morletf(x, f0, fs = 1000, w = 7, s = 1, M = None, norm = 'sss'):
     '''
     Convolve a signal with a complex wavelet
     The real part is the filtered signal
@@ -138,17 +175,31 @@ def trans_morlet(x, f0, fs = 1000, w = 7, s = 1, M = None):
         Scaling factor for the morlet wavelet
     M : integer
         Length of the filter. Overrides the f0 and w inputs
+    norm : string
+        Normalization method
+        'sss' - divide by the sqrt of the sum of squares of points
+        'amp' - divide by the sum of amplitudes divided by 2
 
     Returns
     -------
     x_trans : array
         Complex time series
     '''
+    if w <= 0:
+        raise ValueError('Number of cycles in a filter must be a positive number.')
+        
     if M == None:
         M = 2 * s * w * fs / f0
 
     morlet_f = morlet(M, w = w, s = s)
-    morlet_f = morlet_f / np.sqrt(np.sum(np.abs(morlet_f)**2))
+    morlet_f = morlet_f
+    
+    if norm == 'sss':
+        morlet_f = morlet_f / np.sqrt(np.sum(np.abs(morlet_f)**2))
+    elif norm == 'abs':
+        morlet_f = morlet_f / np.sum(np.abs(morlet_f))*2
+    else:
+        raise ValueError('Not a valid wavelet normalization method.')
 
     mwt_real = np.convolve(x, np.real(morlet_f), mode = 'same')
     mwt_imag = np.convolve(x, np.imag(morlet_f), mode = 'same')
