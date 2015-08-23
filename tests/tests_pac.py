@@ -2,9 +2,10 @@ import pytest
 import numpy as np
 import pacpy
 import os
-from pacpy.pac import plv, glm, mi_tort, mi_canolty, _plv_postfilt, _mitort_postfilt, _glm_postfilt, _micanolty_postfilt
+from pacpy.pac import plv, glm, mi_tort, mi_canolty, ozkurt, _plv_postfilt, _mitort_postfilt, _glm_postfilt, _ozkurt_postfilt, _micanolty_postfilt
 from pacpy.filt import butterf, firf
 from scipy.signal import hilbert
+import copy
 
 '''
 Questions/todo:
@@ -28,10 +29,10 @@ def test_glm():
     '''
     # Load data
     data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert glm(data, data, (13,30), (80,200)) == 0.23778487599877976
+    assert glm(data, data, (13,30), (80,200)) == 0.031906460221
     
     data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert glm(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 0.24695916295388207
+    assert glm(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 0.0347586202162
 
 def test_mi_tort():
     '''
@@ -39,10 +40,10 @@ def test_mi_tort():
     '''
     # Load data
     data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert mi_tort(data, data, (13,30), (80,200)) == 0.23778487599877976
+    assert mi_tort(data, data, (13,30), (80,200)) == 0.00365835870397
     
     data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert mi_tort(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 0.24695916295388207
+    assert mi_tort(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 0.00429228117117
 
 def test_mi_canolty():
     '''
@@ -50,10 +51,21 @@ def test_mi_canolty():
     '''
     # Load data
     data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert mi_canolty(data, data, (13,30), (80,200)) == 0.23778487599877976
+    assert mi_canolty(data, data, (13,30), (80,200)) == 1.10063296657
     
     data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert mi_canolty(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 0.24695916295388207
+    assert mi_canolty(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 1.14299920997
+    
+def test_ozkurt():
+    '''
+    Confirm consistency in ozkurt PAC output with both FIR and butterworth filtering
+    '''
+    # Load data
+    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    assert np.round(ozkurt(data, data, (13,30), (80,200)),13) == 0.0754764820714
+    
+    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    assert np.round(ozkurt(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}),13) == 0.0755537874324
     
 def test_raiseinputerrors():
     '''
@@ -61,17 +73,41 @@ def test_raiseinputerrors():
     '''
     # Load data
     data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    
-    pytest.raises(ValueError, plv(data, data[:-1], (13,30), (80,200)))
-    data2 = data
+    data2 = copy.copy(data)
     data2[-1] = np.nan
-    pytest.raises(ValueError, plv(data, data2, (13,30,31), (80,200)))
-    pytest.raises(ValueError, plv(data2, data, (13,30), (80,200,201)))
-    pytest.raises(ValueError, plv(data, data2, (13,-30), (80,200)))
-    pytest.raises(ValueError, plv(data, data2, (13,30), (-80,200)))
     
-    pytest.raises(ValueError, mi_tort(data, data2, (13,30), (-80,200), Nbins=1))
-    pytest.raises(ValueError, mi_tort(data, data2, (13,30), (-80,200), Nbins=8.8))
+    with pytest.raises(ValueError) as excinfo:
+        plv(data, data[:-1], (13,30), (80,200))
+    assert 'same length' in str(excinfo.value)
+    
+    with pytest.raises(ValueError) as excinfo:
+        plv(data, data2, (13,30), (80,200))
+    assert 'NaNs' in str(excinfo.value)
+    
+    with pytest.raises(ValueError) as excinfo:
+        plv(data, data, (13,30,31), (80,200))
+    assert 'two elements' in str(excinfo.value)
+    
+    with pytest.raises(ValueError) as excinfo:
+        plv(data, data, (13,30), (80,200,201))
+    assert 'two elements' in str(excinfo.value)
+    
+    with pytest.raises(ValueError) as excinfo:
+        plv(data, data, (-13,30), (80,200))
+    assert 'must be > 0' in str(excinfo.value)
+    
+    with pytest.raises(ValueError) as excinfo:
+        plv(data, data, (13,30), (-80,200))
+    assert 'must be > 0' in str(excinfo.value)
+    
+    with pytest.raises(ValueError) as excinfo:
+        mi_tort(data, data, (13,30), (80,200), Nbins=1)
+    assert 'integer >1' in str(excinfo.value)
+    
+    with pytest.raises(ValueError) as excinfo:
+        mi_tort(data, data, (13,30), (80,200), Nbins=8.8)
+    assert 'integer >1' in str(excinfo.value)
+    
     
 def test_plvpf():
     '''
@@ -111,15 +147,13 @@ def test_glmpf():
     '''
     Test that the GLM function outputs 0 and 1 when expected
     '''
-    # Load data
-    data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     
     # Test for GLM = 0
-    dataf = firf(data, (13,30))
-    pha = np.angle(hilbert(dataf))
     np.random.seed(0)
+    T = 10000
+    pha = np.arange(-np.pi,np.pi,np.pi/T)
     amp = np.random.rand(len(pha))
-    assert _glm_postfilt(pha, amp) < 10**-4
+    assert _glm_postfilt(pha, amp) < 10**-3
     
     # Test for GLM = 1
     np.random.seed(0)
@@ -130,19 +164,34 @@ def test_micanoltypf():
     '''
     Test that the Canolty MI function outputs 0 and 1 when expected
     '''
-    # Load data
-    data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     
-    # Test for GLM = 0
-    dataf = firf(data, (13,30))
-    pha = np.angle(hilbert(dataf))
+    # Test for PAC = 0
     np.random.seed(0)
-    amp = np.random.rand(len(pha))
-    print _micanolty_postfilt(pha, amp)# < 10**-4
+    T = 100
+    pha = np.arange(-np.pi,np.pi,np.pi/T)
+    amp = np.ones(len(pha))
+    assert _micanolty_postfilt(pha, amp) < 10**-10
     
-    # Test for GLM = 1
+    # Test for PAC = 1
+    T = 100
+    pha = np.zeros(T)
+    amp = np.ones(T)
+    assert _micanolty_postfilt(pha, amp) == 1
+    
+def test_ozkurtpf():
+    '''
+    Test that the Ozkurt PAC function outputs 0 and 1 when expected
+    '''
+    
+    # Test for PAC = 0
     np.random.seed(0)
-    amp = np.cos(pha)
-    print _micanolty_postfilt(pha, amp)# > 0.99
+    T = 100
+    pha = np.arange(-np.pi,np.pi,np.pi/T)
+    amp = np.ones(len(pha))
+    assert _micanolty_postfilt(pha, amp)# < 10**-10
     
-    
+    # Test for PAC = 1
+    T = 100
+    pha = np.zeros(T)
+    amp = np.ones(T)
+    assert _ozkurt_postfilt(pha, amp) == 1

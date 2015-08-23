@@ -249,6 +249,59 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the modulation index (MI) method defined in Canolty,
     2006
+    Parameters
+    ----------
+    lo : array-like, 1d
+        The low frequency time-series to use as the phase component
+    hi : array-like, 1d
+        The high frequency time-series to use as the amplitude component
+    f_lo : (low, high), Hz
+        The low frequency filtering range
+    f_hi : (low, high), Hz
+        The low frequency filtering range
+    fs : float
+        The sampling rate (default = 1000Hz)
+    filterfn : functional
+        The filtering function, `filterfn(x, f_range, filter_kwargs)`
+    filter_kwargs : dict
+        Keyword parameters to pass to `filterfn(.)`
+    Returns
+    -------
+    pac : scalar
+      PAC value
+    """
+
+    # Arg check
+    _x_sanity(lo, hi)
+    _range_sanity(f_lo, f_hi)
+
+    # Filter series
+    if filterfn is None:
+        filterfn = firf
+    
+    if filter_kwargs is None:
+        filter_kwargs = {}
+
+    # Filter
+    lo = filterfn(lo, f_lo, fs, **filter_kwargs)
+    hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+
+    # PAC
+    amp = np.abs(hilbert(hi))
+    pha = np.angle(hilbert(lo))
+    pac = _micanolty_postfilt(pha, amp)
+    return pac
+
+def _micanolty_postfilt(pha, amp):
+    '''
+    Calculate PAC with the Canolty MI method after filtering is done
+    '''
+    return np.abs(np.mean(amp * np.exp(1j * pha)))
+    
+
+def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
+    """
+    Calculate PAC using the method defined in Ozkurt & Schnitzler, 2011
 
     Parameters
     ----------
@@ -291,14 +344,14 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # PAC
     amp = np.abs(hilbert(hi))
     pha = np.angle(hilbert(lo))
-    pac = _micanolty_postfilt(pha, amp)
+    pac = _ozkurt_postfilt(pha, amp)
     return pac
 
-def _micanolty_postfilt(pha, amp):
+def _ozkurt_postfilt(pha, amp):
     '''
-    Calculate PAC with the Canolty MI method after filtering is done
+    Calculate PAC with the Ozkurt, 2011 method after filtering is done
     '''
-    return np.abs(np.mean(amp * np.exp(1j * pha)))
+    return np.abs(np.sum(amp * np.exp(1j * pha))) / (np.sqrt(len(pha)) * np.sqrt(np.sum(amp**2)))
 
 
 def otc(x, f_hi, f_step, fs=1000,
@@ -354,14 +407,14 @@ def otc(x, f_hi, f_step, fs=1000,
     # Arg check
     _x_sanity(x, None)
     _range_sanity(None, f_hi)
+    # Set default time range for modulatory signal
+    if t_modsig == None:
+        t_modsig = (-1,1)
     if f_step <= 0:
         raise ValueError('Frequency band width must be a positive number.')
     if t_modsig[0] > t_modsig[1]:
         raise ValueError('Invalid time range for modulation signal.')
     
-    # Set default time range for modulatory signal
-    if t_modsig == None:
-        t_modsig = (-1,1)
 
     # Calculate the time-frequency representation
     f0s = np.arange(f_hi[0], f_hi[1], f_step)
@@ -428,6 +481,7 @@ def _peaktimes(x, prc=95, t_buffer=.01, fs=1000):
     event_intervals = _chunk_time(hi, samp_buffer=samp_buffer)
     E = np.int(np.size(event_intervals) / 2)
     events = np.zeros(E, dtype=object)
+    
     for e in xrange(E):
         temp = x[np.arange(event_intervals[e][0], event_intervals[e][1] + 1)]
         events[e] = event_intervals[e][0] + np.argmax(temp)
@@ -450,17 +504,6 @@ def _chunk_time(x, samp_buffer=0):
     -------
     chunks : array (#chunks x 2)
         List of the sample bounds for each chunk
-
-    doctests
-    --------
-    >>> _chunk_time([5,6,7,8,10,55,56], samp_buffer = 0)
-        array([[ 5,  8],
-               [10, 10],
-               [55, 56]])
-
-    >>> _chunk_time([5,6,7,8,10,55,56], samp_buffer = 2)
-        array([[ 5, 10],
-               [55, 56]])
     """
     if samp_buffer < 0:
         raise ValueError('Buffer between signal peaks must be a positive number')
@@ -490,7 +533,7 @@ def _chunk_time(x, samp_buffer=0):
 
     # Add final row to chunk
     if Nchunk == 0:
-        chunks = [cur_start, cur_samp]
+        chunks = [[cur_start, cur_samp]]
     else:
         chunks = np.vstack([chunks, [cur_start, cur_samp]])
 
@@ -520,9 +563,10 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     pac_method : string
         Method to calculate PAC.
         'mi_tort' - See Tort, 2008
-        'plv' - See Penny, 2008 or Tort, 2010
+        'plv' - See Penny, 2008
         'glm' - See Penny, 2008
-        'mi_canolty' - See Canolty, 2006        
+        'mi_canolty' - See Canolty, 2006
+        'ozkurt' - See Ozkurt & Schnitzler, 2011       
     filterfn : function
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
@@ -559,6 +603,9 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
                                  filterfn=filterfn, filter_kwargs=filter_kwargs)
             elif pac_method == 'mi_canolty':
                 comod[p,a] = mi_canolty(lo, hi, f_lo, f_hi, fs=fs,
+                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
+            elif pac_method == 'ozkurt':
+                comod[p,a] = ozkurt(lo, hi, f_lo, f_hi, fs=fs,
                                  filterfn=filterfn, filter_kwargs=filter_kwargs)
             elif pac_method == 'glm':
                 comod[p,a] = glm(lo, hi, f_lo, f_hi, fs=fs,
