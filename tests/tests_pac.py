@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import pacpy
 import os
-from pacpy.pac import plv, glm, mi_tort, mi_canolty, ozkurt, _plv_postfilt, _mitort_postfilt, _glm_postfilt, _ozkurt_postfilt, _micanolty_postfilt
+from pacpy.pac import plv, glm, mi_tort, mi_canolty, ozkurt
 from pacpy.filt import butterf, firf
 from scipy.signal import hilbert
 import copy
@@ -108,90 +108,101 @@ def test_raiseinputerrors():
         mi_tort(data, data, (13,30), (80,200), Nbins=8.8)
     assert 'integer >1' in str(excinfo.value)
     
+
+def genPAC1(phabias = .5, flo = 5, fhi = 100, glm_bias = False):
+    '''
+    Generate two signals that have very high PAC
+    phase oscillation = 5Hz
+    amplitude oscillation = 100Hz
+    '''
+    dt = .001
+    T = 10
+    t = np.arange(0,T,dt)
     
+    lo = np.sin(t*2*np.pi*flo)
+    hi = np.sin(t*2*np.pi*fhi)
+    
+    if glm_bias:
+        hi = hi * (lo+1)
+    else:
+        pha = np.angle(hilbert(lo))
+        hi[pha > -np.pi + phabias] = 0
+        
+    return lo, hi
+    
+    
+def genPAC0(flo = 5, fhi = 100):
+    '''
+    Generate two signals that have very low PAC
+    phase oscillation = 5Hz
+    amplitude oscillation = 100Hz
+    '''
+    dt = .001
+    T = 10
+    t = np.arange(0,T,dt)
+    
+    lo = np.sin(t*2*np.pi*flo)
+    hi = np.sin(t*2*np.pi*fhi)
+    return lo, hi
+    
+
+def ident(x, f, fs):
+    return x
+        
+        
 def test_plvpf():
     '''
-    Test that the PLV function outputs 1 when expected
+    Test that the PLV function outputs close to 0 and 1 when expected
     '''
-    # Load data
-    data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    lo, hi = genPAC1()
+    assert plv(lo, hi, (4,6), (90,110)) > 0.99
     
-    # Test for PLV=1
-    dataf = firf(data, (13,30))
-    assert _plv_postfilt(dataf, dataf) == 1
+    lo, hi = genPAC0()
+    assert plv(lo, hi, (4,6), (90,110)) < 0.05
+    
     
 def test_mitortpf():
     '''
-    Test that the Tort MI function outputs 0 and 1 when expected
+    Test that the Tort MI function outputs close to 0 and 1 when expected
     '''
-    # Load data
-    data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    lo, hi = genPAC1(phabias = .2, fhi = 300)
+    assert mi_tort(lo, hi, (4,6), (100, 400)) > 0.8
     
-    # Test for MI=0
-    dataf = firf(data, (13,30))
-    pha = np.angle(hilbert(dataf))
-    amp = np.ones(len(pha))
-    Nbins = 20
-    assert _mitort_postfilt(pha, amp, Nbins) < 10**-10
+    lo, hi = genPAC0()
+    assert mi_tort(lo, hi, (4,6), (90,110)) < 10**-5
     
-    # Test for MI=1
-    T = 1000
-    np.random.seed(0)
-    pha = np.random.randint(0,Nbins,T)
-    pha = (pha - Nbins/2.0) * 2 * np.pi / Nbins
-    amp = np.ones(T)*.00001
-    amp[pha==0] = 1
-    assert _mitort_postfilt(pha, amp, Nbins) > 0.99
     
 def test_glmpf():
     '''
-    Test that the GLM function outputs 0 and 1 when expected
+    Test that the GLM function outputs close to 0 and 1 when expected
     '''
+    lo, hi = genPAC1(glm_bias = True)
+    assert glm(lo, hi, (4,6), (90,110)) > 0.99
     
-    # Test for GLM = 0
-    np.random.seed(0)
-    T = 10000
-    pha = np.arange(-np.pi,np.pi,np.pi/T)
-    amp = np.random.rand(len(pha))
-    assert _glm_postfilt(pha, amp) < 10**-3
-    
-    # Test for GLM = 1
-    np.random.seed(0)
-    amp = np.sin(pha) + 2*np.cos(pha) + np.random.rand(len(pha))*.001
-    assert _glm_postfilt(pha, amp) > 0.99
+    lo, hi = genPAC0()
+    assert glm(lo, hi, (4,6), (90,110)) < 0.01
     
 def test_micanoltypf():
     '''
-    Test that the Canolty MI function outputs 0 and 1 when expected
+    Test that the Canolty MI function outputs close to 0 and 1 when expected
     '''
+    lo, hi = genPAC1(phabias = .2, fhi = 300)
+    hif = firf(hi, (100,400))
+    amp = np.abs(hilbert(hif))
+    assert mi_canolty(lo, hi, (4,6), (100, 400))/np.mean(amp) > 0.99
     
-    # Test for PAC = 0
-    np.random.seed(0)
-    T = 100
-    pha = np.arange(-np.pi,np.pi,np.pi/T)
-    amp = np.ones(len(pha))
-    assert _micanolty_postfilt(pha, amp) < 10**-10
-    
-    # Test for PAC = 1
-    T = 100
-    pha = np.zeros(T)
-    amp = np.ones(T)
-    assert _micanolty_postfilt(pha, amp) == 1
+    lo, hi = genPAC0()
+    assert mi_canolty(lo, hi, (4,6), (90,110)) < 0.001
     
 def test_ozkurtpf():
     '''
-    Test that the Ozkurt PAC function outputs 0 and 1 when expected
+    Test that the Ozkurt PAC function outputs close to 0 and 1 when expected
     '''
+    lo, hi = genPAC1(phabias = .2, fhi = 300)
+    hif = firf(hi, (100,400))
+    amp = np.abs(hilbert(hif))
+    weight = (np.sqrt(len(amp)) * np.sqrt(np.sum(amp**2))) / np.sum(amp)
+    assert ozkurt(lo, hi, (4,6), (100, 400)) * weight > 0.99
     
-    # Test for PAC = 0
-    np.random.seed(0)
-    T = 100
-    pha = np.arange(-np.pi,np.pi,np.pi/T)
-    amp = np.ones(len(pha))
-    assert _micanolty_postfilt(pha, amp)# < 10**-10
-    
-    # Test for PAC = 1
-    T = 100
-    pha = np.zeros(T)
-    amp = np.ones(T)
-    assert _ozkurt_postfilt(pha, amp) == 1
+    lo, hi = genPAC0()
+    assert ozkurt(lo, hi, (4,6), (90,110)) < 0.001

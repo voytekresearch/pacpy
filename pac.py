@@ -84,18 +84,12 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     amp = np.abs(hilbert(xhi))
     xhiamplo = filterfn(amp, f_lo, fs, **filter_kwargs)
 
-    # And PAC
-    pac = _plv_postfilt(xlo, xhiamplo)
-
-    return pac
-
-def _plv_postfilt(xlo, xhiamplo):
-    '''
-    Calculate PAC with the PLV method after filtering is done
-    '''
+    # Calculate PLV
     pha1 = np.angle(hilbert(xlo))
     pha2 = np.angle(hilbert(xhiamplo))
-    return np.abs(np.sum(np.exp(1j * (pha1 - pha2)))) / len(xlo)
+    pac = np.abs(np.sum(np.exp(1j * (pha1 - pha2)))) / len(xlo)
+
+    return pac
 
 
 def mi_tort(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
@@ -149,17 +143,9 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
     # Calculate phase and amplitude time series
     amp = np.abs(hilbert(hi))
     pha = np.angle(hilbert(lo))
-    
-    # Calculate PAC
-    pac = _mitort_postfilt(pha, amp, Nbins)
-    return pac
-
-def _mitort_postfilt(pha, amp, Nbins):
-    '''
-    Calculate PAC with the Tort MI method after filtering is done
-    '''
     phadeg = np.degrees(pha)
     
+    # Calculate PAC    
     binsize = 360 / Nbins
     phase_lo = np.arange(-180, 180, binsize)
     mean_amp = np.zeros(len(phase_lo))
@@ -174,7 +160,9 @@ def _mitort_postfilt(pha, amp, Nbins):
         
     h = -np.sum(p_j * np.log10(p_j))
     h_max = np.log10(Nbins)
-    return (h_max - h) / h_max
+    pac = (h_max - h) / h_max
+    
+    return pac
     
 
 def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
@@ -219,17 +207,10 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     lo = filterfn(lo, f_lo, fs, **filter_kwargs)
     hi = filterfn(hi, f_hi, fs, **filter_kwargs)
 
-    # PAC
+    # Phase and amplitude time series
     amp = np.abs(hilbert(hi))
     pha = np.angle(hilbert(lo))
-    pac = _glm_postfilt(pha, amp)
-    return pac
-
-def _glm_postfilt(pha, amp):
-    '''
-    Calculate PAC with the GLM method after filtering is done
-    '''
-
+    
     # First prepare GLM
     y = amp
     X_pre = np.vstack((np.cos(pha), np.sin(pha)))
@@ -241,8 +222,10 @@ def _glm_postfilt(pha, amp):
     res = glm.fit()
 
     # Calculate PAC from GLM residuals
-    return 1 - np.sum(res.resid_deviance ** 2) / np.sum(
+    pac = 1 - np.sum(res.resid_deviance ** 2) / np.sum(
         (amp - np.mean(amp)) ** 2)
+        
+    return pac
 
 
 def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
@@ -289,14 +272,8 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # PAC
     amp = np.abs(hilbert(hi))
     pha = np.angle(hilbert(lo))
-    pac = _micanolty_postfilt(pha, amp)
+    pac = np.abs(np.mean(amp * np.exp(1j * pha)))
     return pac
-
-def _micanolty_postfilt(pha, amp):
-    '''
-    Calculate PAC with the Canolty MI method after filtering is done
-    '''
-    return np.abs(np.mean(amp * np.exp(1j * pha)))
     
 
 def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
@@ -344,14 +321,8 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # PAC
     amp = np.abs(hilbert(hi))
     pha = np.angle(hilbert(lo))
-    pac = _ozkurt_postfilt(pha, amp)
+    pac = np.abs(np.sum(amp * np.exp(1j * pha))) / (np.sqrt(len(pha)) * np.sqrt(np.sum(amp**2)))
     return pac
-
-def _ozkurt_postfilt(pha, amp):
-    '''
-    Calculate PAC with the Ozkurt, 2011 method after filtering is done
-    '''
-    return np.abs(np.sum(amp * np.exp(1j * pha))) / (np.sqrt(len(pha)) * np.sqrt(np.sum(amp**2)))
 
 
 def otc(x, f_hi, f_step, fs=1000,
