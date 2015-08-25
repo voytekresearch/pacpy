@@ -54,11 +54,9 @@ def test_plv():
     4. Confirm PAC=0 when expected
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert plv(data, data, (13,30), (80,200)) == 0.23778487599877976
-    
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert plv(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 0.24695916295388207
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
+    assert np.allclose(plv(data, data, (13,30), (80,200)), 0.23778, atol = 10**-5)
+    assert np.allclose(plv(data, data, (13,30), (80,200), filterfn = butterf), 0.24696, atol = 10**-5)
     
     #Test that the PLV function outputs close to 0 and 1 when expected
     lo, hi = genPAC1()
@@ -77,9 +75,9 @@ def test_glm():
     4. Confirm PAC=0 when expected
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert glm(data, data, (13,30), (80,200)) == 0.031906460221
-    assert glm(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 0.0347586202162
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
+    assert np.allclose(glm(data, data, (13,30), (80,200)), 0.03191, atol = 10**-5)
+    assert np.allclose(glm(data, data, (13,30), (80,200), filterfn = butterf), 0.03476, atol = 10**-5)
     
     #Test that the GLM function outputs close to 0 and 1 when expected
     lo, hi = genPAC1(glm_bias = True)
@@ -98,9 +96,9 @@ def test_mi_tort():
     4. Confirm PAC=0 when expected
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert mi_tort(data, data, (13,30), (80,200)) == 0.00365835870397
-    assert mi_tort(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 0.00429228117117
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
+    assert np.allclose(mi_tort(data, data, (13,30), (80,200)), 0.00366, atol = 10**-5)
+    assert np.allclose(mi_tort(data, data, (13,30), (80,200), filterfn = butterf), 0.00429, atol = 10**-5)
     
     #Test that the Tort MI function outputs close to 0 and 1 when expected
     lo, hi = genPAC1(phabias = .2, fhi = 300)
@@ -119,10 +117,10 @@ def test_mi_canolty():
     4. Confirm PAC=0 when expected
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert mi_canolty(data, data, (13,30), (80,200)) == 1.10063296657
-    assert mi_canolty(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}) == 1.14299920997
-    
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
+    assert np.allclose(mi_canolty(data, data, (13,30), (80,200)), 1.10063, atol = 10**-5)
+    assert np.allclose(mi_canolty(data, data, (13,30), (80,200), filterfn = butterf), 1.14300, atol = 10**-5)
+
     #Test that the Canolty MI function outputs close to 0 and 1 when expected
     lo, hi = genPAC1(phabias = .2, fhi = 300)
     hif = firf(hi, (100,400))
@@ -142,9 +140,9 @@ def test_ozkurt():
     4. Confirm PAC=0 when expected
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    assert np.round(ozkurt(data, data, (13,30), (80,200)),13) == 0.0754764820714
-    assert np.round(ozkurt(data, data, (13,30), (80,200), filterfn = butterf, filter_kwargs = {}),13) == 0.0755537874324
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
+    assert np.allclose(ozkurt(data, data, (13,30), (80,200)), 0.07548, atol = 10**-5)
+    assert np.allclose(ozkurt(data, data, (13,30), (80,200), filterfn = butterf), 0.07555, atol = 10**-5)
     
     #Test that the Ozkurt PAC function outputs close to 0 and 1 when expected
     lo, hi = genPAC1(phabias = .2, fhi = 300)
@@ -162,7 +160,7 @@ def test_otc():
     Test PAC function: OTC
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
     
     # Confirm consistency in result
     t_modsig = (-.5,.5)
@@ -170,7 +168,7 @@ def test_otc():
     f_hi = (80,200)
     f_step = 4
     pac, tf, a_events, mod_sig = otc(data, f_hi, f_step, fs=fs, t_modsig = t_modsig)
-    assert pac# == 220.325631448
+    assert np.allclose(pac, 220.32563, atol = 10**-5)
     
     # Confirm correct shapes in outputs
     assert np.shape(tf) == ((f_hi[1]-f_hi[0])/f_step,len(data))
@@ -184,7 +182,7 @@ def test_peaktimes():
     Test OTC helper function: _peaktimes
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
     
     # Confirm functionality
     assert _peaktimes(data[:1000], prc=99) == 344
@@ -204,13 +202,13 @@ def test_comod():
     Test comodulogram function
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
     p_range = [10,20]
     a_range = [50,150]
     dp = 5
     da = 50
     a = comodulogram(data, data, p_range, a_range, dp, da)
-    assert np.round(a[0][0],8) == 0.00286671
+    assert np.allclose(a[0][0], 0.00287, atol = 10**-5)
     assert np.shape(a) == (len(np.arange(p_range[0],p_range[1],dp)), len(np.arange(a_range[0],a_range[1],da)))
     
     
@@ -219,7 +217,7 @@ def test_paseries():
     Test calculation of phase and amplitude time series
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
     
     # Confirm returns correct size
     p, a = pa_series(data, data, (13,30), (80,200))
@@ -227,8 +225,8 @@ def test_paseries():
     assert np.shape(a) == np.shape(data)
     
     # Confirm consistency
-    assert np.round(np.mean(a),10) == 11.4397003025
-    assert np.round(p[0],11) == 1.57118950513
+    assert np.allclose(np.mean(a), 11.43970, atol = 10**-5)
+    assert np.allclose(p[0], 1.57119, atol = 10**-5)
     
     
 def test_padist():
@@ -236,7 +234,7 @@ def test_padist():
     Test calculation of amplitude distribution as a function of phase
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
     
     np.random.seed(0)
     Nbins = np.random.randint(2,20)
@@ -246,7 +244,7 @@ def test_padist():
     
     # Confirm consistency
     dist = pa_dist(pha, amp, Nbins=10)
-    assert np.round(dist[0],10) == 12.1396071766
+    assert np.allclose(dist[0], 12.13961, atol = 10**-5)
     
     
 def test_raiseinputerrors():
@@ -254,7 +252,7 @@ def test_raiseinputerrors():
     Confirm that ValueErrors from dumb user input are raised
     """
     # Load data
-    data=np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
     data2 = copy.copy(data)
     data2[-1] = np.nan
     
