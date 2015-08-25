@@ -7,7 +7,7 @@ from scipy.signal import morlet
 from scipy.signal import butter
 
 def firf(x, f_range, fs = 1000, w = 7, tw = .15):
-    '''
+    """
     Filter signal with an FIR filter
 
     x : array-like, 1d
@@ -26,7 +26,7 @@ def firf(x, f_range, fs = 1000, w = 7, tw = .15):
     -------
     x_filt : array-like, 1d
         Filtered time series
-    '''
+    """
     
     if w <= 0:
         raise ValueError('Number of cycles in a filter must be a positive number.')
@@ -63,7 +63,7 @@ def firf(x, f_range, fs = 1000, w = 7, tw = .15):
 
 
 def butterf(x, f_range, fs = 1000, N = 2):
-    '''
+    """
     Filter signal with an FIR filter
 
     x : array-like, 1d
@@ -79,7 +79,7 @@ def butterf(x, f_range, fs = 1000, N = 2):
     -------
     x_filt : array-like, 1d
         Filtered time series
-    '''
+    """
     
     nyq = fs/2
     if np.any(np.array(f_range) > nyq):
@@ -103,7 +103,7 @@ def butterf(x, f_range, fs = 1000, N = 2):
 
 
 def rmv_edgeart(x, w, cf, fs):
-    '''
+    """
     Calculate the number of points to remove for edge artifacts
 
     x : array
@@ -114,13 +114,13 @@ def rmv_edgeart(x, w, cf, fs):
         number of cycles
     Fs : float
         Sampling rate
-    '''
+    """
     win = np.floor((w * fs / cf) / 2.0)
     return x[np.int(win):-np.int(win)]
 
 
 def morletT(x, f0s, w = 7, fs = 1000, s = 1):
-    '''
+    """
     Calculate the time-frequency representation of the signal 'x' over the
     frequencies in 'f0s' using morlet wavelets
 
@@ -142,7 +142,7 @@ def morletT(x, f0s, w = 7, fs = 1000, s = 1):
     -------
     mwt : 2-D array
         time-frequency representation of signal x
-    '''
+    """
     if w <= 0:
         raise ValueError('Number of cycles in a filter must be a positive number.')
         
@@ -156,7 +156,7 @@ def morletT(x, f0s, w = 7, fs = 1000, s = 1):
 
 
 def morletf(x, f0, fs = 1000, w = 7, s = 1, M = None, norm = 'sss'):
-    '''
+    """
     Convolve a signal with a complex wavelet
     The real part is the filtered signal
     Taking np.abs() of output gives the analytic amplitude
@@ -184,7 +184,7 @@ def morletf(x, f0, fs = 1000, w = 7, s = 1, M = None, norm = 'sss'):
     -------
     x_trans : array
         Complex time series
-    '''
+    """
     if w <= 0:
         raise ValueError('Number of cycles in a filter must be a positive number.')
         

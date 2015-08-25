@@ -92,8 +92,7 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     return pac
 
 
-def mi_tort(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
-            Nbins=20):
+def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the modulation index method from prefiltered
     signals

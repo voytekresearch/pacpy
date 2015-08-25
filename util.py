@@ -7,11 +7,11 @@ import statsmodels.api as sm
 
 
 def fasthilbert(x, axis=-1):
-    '''
+    """
     Redefinition of scipy.signal.hilbert, which is very slow for some lengths
     of the signal x. This version zero-pads the signal to the next power of 2
     for speed.
-    '''
+    """
     x = np.array(x)
     N = x.shape[axis]
     N2 = 2**(int(math.log(len(x), 2))+1)
