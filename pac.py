@@ -659,11 +659,11 @@ def pa_dist(pha, amp, Nbins=10):
         raise ValueError('Number of bins in the low frequency oscillation cycle must be an integer >1.')
     if len(pha) != len(amp):
         raise ValueError('Phase and amplitude time series must be of same length.')
-        
-    phase_bins = np.linspace(-np.pi, np.pi, Nbins + 1)
-    dist = np.zeros(Nbins)
+    
+    phase_bins = np.linspace(-np.pi, np.pi, int(Nbins + 1))
+    dist = np.zeros(int(Nbins))
 
-    for b in xrange(Nbins):
+    for b in xrange(int(Nbins)):
         t_phase = np.logical_and(pha >= phase_bins[b],
                                  pha < phase_bins[b + 1])
         dist[b] = np.mean(amp[t_phase])
