@@ -516,6 +516,8 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     """
     Calculate PAC for many small frequency bands
     
+    Parameters
+    ----------
     lo : array-like, 1d
         The low frequency time-series to use as the phase component
     hi : array-like, 1d
@@ -541,6 +543,12 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
+        
+    Returns
+    -------
+    comod : array-like, 2d
+        Matrix of phase-amplitude coupling values for each combination of the
+        phase frequency bin and the amplitude frequency bin
     """
     
     # Arg check
@@ -653,7 +661,6 @@ def pa_dist(pha, amp, Nbins=10):
     -------
     dist : array
         Average
-
     """
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
         raise ValueError('Number of bins in the low frequency oscillation cycle must be an integer >1.')
