@@ -30,7 +30,7 @@ setup(
     install_requires=['numpy>=1.8.0','scipy>=0.15.1'],
     extras_require={'test': ['pytest']},
     package_data={
-        '': ['test/*.npy'],
+        '': ['tests/*.npy', 'tests/test_*py'],
     },
     test_suite="tests"
 )
