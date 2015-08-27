@@ -20,7 +20,7 @@ before_install:
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest statsmodels
   - pip install -r requirements.txt
-  - pip install pacpy/
+  - pip install . 
 
 # command to run tests
 script: py.test pacpy/tests
