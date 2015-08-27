@@ -1,10 +1,6 @@
 language: python
 python:
   - "2.7"
-# command to install dependencies
-install:
-  - pip install -r requirements.txt
-  - pip install .
 
 notifications:
     email: false
@@ -23,6 +19,8 @@ before_install:
 # Install packages
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest statsmodels
+  - pip install -r requirements.txt
+  - pip install pacpy/
 
 # command to run tests
 script: py.test pacpy/tests
