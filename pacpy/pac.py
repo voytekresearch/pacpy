@@ -6,7 +6,7 @@ from __future__ import division
 import numpy as np
 from scipy.signal import hilbert
 from scipy.stats.mstats import zscore
-from pacpy.filt import firf, butterf, morletT
+from pacpy.filt import firf, morletT
 import statsmodels.api as sm
 
 
@@ -74,7 +74,7 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Filter setup
     if filterfn is None:
         filterfn = firf
-    
+
     if filter_kwargs is None:
         filter_kwargs = {}
 
@@ -131,7 +131,7 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
     # Filter setup
     if filterfn is None:
         filterfn = firf
-    
+
     if filter_kwargs is None:
         filter_kwargs = {}
 
@@ -143,26 +143,26 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
     amp = np.abs(hilbert(hi))
     pha = np.angle(hilbert(lo))
     phadeg = np.degrees(pha)
-    
-    # Calculate PAC    
+
+    # Calculate PAC
     binsize = 360 / Nbins
     phase_lo = np.arange(-180, 180, binsize)
     mean_amp = np.zeros(len(phase_lo))
-    for b in xrange(len(phase_lo)):
+    for b in range(len(phase_lo)):
         phaserange = np.logical_and(phadeg >= phase_lo[b],
                                     phadeg < (phase_lo[b] + binsize))
         mean_amp[b] = np.mean(amp[phaserange])
 
     p_j = np.zeros(len(phase_lo))
-    for b in xrange(len(phase_lo)):
+    for b in range(len(phase_lo)):
         p_j[b] = mean_amp[b] / sum(mean_amp)
-        
+
     h = -np.sum(p_j * np.log10(p_j))
     h_max = np.log10(Nbins)
     pac = (h_max - h) / h_max
-    
+
     return pac
-    
+
 
 def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
@@ -198,7 +198,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Filter series
     if filterfn is None:
         filterfn = firf
-    
+
     if filter_kwargs is None:
         filter_kwargs = {}
 
@@ -209,7 +209,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Phase and amplitude time series
     amp = np.abs(hilbert(hi))
     pha = np.angle(hilbert(lo))
-    
+
     # First prepare GLM
     y = amp
     X_pre = np.vstack((np.cos(pha), np.sin(pha)))
@@ -223,7 +223,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Calculate PAC from GLM residuals
     pac = 1 - np.sum(res.resid_deviance ** 2) / np.sum(
         (amp - np.mean(amp)) ** 2)
-        
+
     return pac
 
 
@@ -260,7 +260,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Filter series
     if filterfn is None:
         filterfn = firf
-    
+
     if filter_kwargs is None:
         filter_kwargs = {}
 
@@ -273,7 +273,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     pha = np.angle(hilbert(lo))
     pac = np.abs(np.mean(amp * np.exp(1j * pha)))
     return pac
-    
+
 
 def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
@@ -309,7 +309,7 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Filter series
     if filterfn is None:
         filterfn = firf
-    
+
     if filter_kwargs is None:
         filter_kwargs = {}
 
@@ -373,18 +373,17 @@ def otc(x, f_hi, f_step, fs=1000,
       equal to that maximal modulation strength
 
     """
-    
+
     # Arg check
     _x_sanity(x, None)
     _range_sanity(None, f_hi)
     # Set default time range for modulatory signal
-    if t_modsig == None:
+    if t_modsig is None:
         t_modsig = (-1,1)
     if f_step <= 0:
         raise ValueError('Frequency band width must be a positive number.')
     if t_modsig[0] > t_modsig[1]:
         raise ValueError('Invalid time range for modulation signal.')
-    
 
     # Calculate the time-frequency representation
     f0s = np.arange(f_hi[0], f_hi[1], f_step)
@@ -393,9 +392,9 @@ def otc(x, f_hi, f_step, fs=1000,
     # Find the high frequency activity event times
     F = len(f0s)
     a_events = np.zeros(F, dtype=object)
-    for f in xrange(F):
+    for f in range(F):
         a_events[f] = _peaktimes(zscore(np.abs(tf[f])), prc=event_prc, t_buffer=t_buffer)
-    
+
     # Calculate the modulation signal
     samp_modsig = np.arange(t_modsig[0] * fs, t_modsig[1] * fs)
     samp_modsig = samp_modsig.astype(int)
@@ -403,28 +402,28 @@ def otc(x, f_hi, f_step, fs=1000,
     mod_sig = np.zeros([F, S])
 
     # For each frequency in the time-frequency representation, calculate a modulation signal
-    for f in xrange(F):
+    for f in range(F):
         # Exclude high frequency events that are too close to the signal
         # boundaries to extract an entire modulation signal
         mask = np.ones(len(a_events[f]), dtype=bool)
         mask[a_events[f] <= samp_modsig[-1]] = False
         mask[a_events[f] >= (len(x) - samp_modsig[-1])] = False
         a_events[f] = a_events[f][mask]
-        
+
         # Calculate the average LFP around each high frequency event
         E = len(a_events[f])
-        for e in xrange(E):
+        for e in range(E):
             cur_ecog = x[a_events[f][e] + samp_modsig]
             mod_sig[f] = mod_sig[f] + cur_ecog / E
 
     # Calculate modulation strength, the range of the modulation signal
     mod_strength = np.zeros(F)
-    for f in xrange(F):
+    for f in range(F):
         mod_strength = np.max(mod_sig[f]) - np.min(mod_sig[f])
-    
+
     # Calculate PAC
     pac = np.max(mod_strength)
-    
+
     return pac, tf, a_events, mod_sig
 
 
@@ -445,14 +444,14 @@ def _peaktimes(x, prc=95, t_buffer=.01, fs=1000):
     """
     if np.logical_or(prc < 0, prc >= 100):
         raise ValueError('Percentile threshold must be between 0 and 100.')
-        
+
     samp_buffer = np.int(np.round(t_buffer * fs))
     hi = x > np.percentile(x, prc)
     event_intervals = _chunk_time(hi, samp_buffer=samp_buffer)
     E = np.int(np.size(event_intervals) / 2)
     events = np.zeros(E, dtype=object)
-    
-    for e in xrange(E):
+
+    for e in range(E):
         temp = x[np.arange(event_intervals[e][0], event_intervals[e][1] + 1)]
         events[e] = event_intervals[e][0] + np.argmax(temp)
 
@@ -479,7 +478,7 @@ def _chunk_time(x, samp_buffer=0):
         raise ValueError('Buffer between signal peaks must be a positive number')
     if samp_buffer != int(samp_buffer):
         raise ValueError('Number of samples must be an integer')
-        
+
     if type(x[0]) == np.bool_:
         Xs = np.arange(len(x))
         x = Xs[x]
@@ -489,7 +488,7 @@ def _chunk_time(x, samp_buffer=0):
     cur_samp = x[0]
     Nchunk = 0
     chunks = []
-    for i in xrange(1, X):
+    for i in range(1, X):
         if x[i] > (cur_samp + samp_buffer + 1):
             if Nchunk == 0:
                 chunks = [cur_start, cur_samp]
@@ -515,7 +514,7 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
                  filterfn=None, filter_kwargs=None):
     """
     Calculate PAC for many small frequency bands
-    
+
     Parameters
     ----------
     lo : array-like, 1d
@@ -538,19 +537,19 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
         'plv' - See Penny, 2008
         'glm' - See Penny, 2008
         'mi_canolty' - See Canolty, 2006
-        'ozkurt' - See Ozkurt & Schnitzler, 2011       
+        'ozkurt' - See Ozkurt & Schnitzler, 2011
     filterfn : function
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
-        
+
     Returns
     -------
     comod : array-like, 2d
         Matrix of phase-amplitude coupling values for each combination of the
         phase frequency bin and the amplitude frequency bin
     """
-    
+
     # Arg check
     _x_sanity(lo, hi)
     _range_sanity(p_range, a_range)
@@ -567,12 +566,12 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
 
     # Calculate PAC for every combination of P and A
     comod = np.zeros((P, A))
-    for p in xrange(P):
+    for p in range(P):
         f_lo = (f_phases[p], f_phases[p] + dp)
-        
-        for a in xrange(A):
+
+        for a in range(A):
             f_hi = (f_amps[a], f_amps[a] + da)
-            
+
             if pac_method == 'plv':
                 comod[p,a] = plv(lo, hi, f_lo, f_hi, fs=fs,
                                  filterfn=filterfn, filter_kwargs=filter_kwargs)
@@ -666,11 +665,11 @@ def pa_dist(pha, amp, Nbins=10):
         raise ValueError('Number of bins in the low frequency oscillation cycle must be an integer >1.')
     if len(pha) != len(amp):
         raise ValueError('Phase and amplitude time series must be of same length.')
-    
+
     phase_bins = np.linspace(-np.pi, np.pi, int(Nbins + 1))
     dist = np.zeros(int(Nbins))
 
-    for b in xrange(int(Nbins)):
+    for b in range(int(Nbins)):
         t_phase = np.logical_and(pha >= phase_bins[b],
                                  pha < phase_bins[b + 1])
         dist[b] = np.mean(amp[t_phase])
