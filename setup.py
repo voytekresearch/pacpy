@@ -1,10 +1,5 @@
 """pacpy setup script"""
 from setuptools import setup, find_packages
-# To use a consistent encoding
-# from codecs import open
-# from os import path
-
-# here = path.abspath(path.dirname(__file__))
 
 setup(
     name='pacpy',
@@ -32,9 +27,10 @@ setup(
     ],
     keywords='neuroscience spectral phase-amplitude',
     packages=find_packages(),
-    install_requires=['numpy>=1.8.0, scipy>=0.15.1'],
+    install_requires=['numpy>=1.8.0','scipy>=0.15.1'],
     extras_require={'test': ['pytest']},
     package_data={
         '': ['test/*.npy'],
-    }
+    },
+    test_suite="tests"
 )
