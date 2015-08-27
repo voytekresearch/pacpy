@@ -7,7 +7,7 @@ This code is not yet ready for general use. That should change SOON. But for now
 
 ## Install
 
-Not yet uploaded to pipy (...soon).  To install:
+Not yet uploaded to pypi (...soon).  To install:
 
 1. `git clone https://github.com/voytekresearch/pacpy` into the directory of your choice.
 2. At the command line, cd into that choice directory
