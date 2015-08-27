@@ -203,7 +203,7 @@ def test_comod():
     """
     # Load data
     data=np.load(os.path.dirname(pacpy.__file__) + '/test/exampledata.npy')
-    p_range = [10,20]
+    p_range = [10,21]
     a_range = [50,150]
     dp = 5
     da = 50

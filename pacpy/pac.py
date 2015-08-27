@@ -516,6 +516,8 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     """
     Calculate PAC for many small frequency bands
     
+    Parameters
+    ----------
     lo : array-like, 1d
         The low frequency time-series to use as the phase component
     hi : array-like, 1d
@@ -541,6 +543,12 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
+        
+    Returns
+    -------
+    comod : array-like, 2d
+        Matrix of phase-amplitude coupling values for each combination of the
+        phase frequency bin and the amplitude frequency bin
     """
     
     # Arg check
@@ -653,17 +661,16 @@ def pa_dist(pha, amp, Nbins=10):
     -------
     dist : array
         Average
-
     """
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
         raise ValueError('Number of bins in the low frequency oscillation cycle must be an integer >1.')
     if len(pha) != len(amp):
         raise ValueError('Phase and amplitude time series must be of same length.')
-        
-    phase_bins = np.linspace(-np.pi, np.pi, Nbins + 1)
-    dist = np.zeros(Nbins)
+    
+    phase_bins = np.linspace(-np.pi, np.pi, int(Nbins + 1))
+    dist = np.zeros(int(Nbins))
 
-    for b in xrange(Nbins):
+    for b in xrange(int(Nbins)):
         t_phase = np.logical_and(pha >= phase_bins[b],
                                  pha < phase_bins[b + 1])
         dist[b] = np.mean(amp[t_phase])
