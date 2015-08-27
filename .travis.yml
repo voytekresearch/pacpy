@@ -22,7 +22,7 @@ before_install:
 
 # Install packages
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest statsmodels
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy statsmodels
 
 # command to run tests
 script: pytest
