@@ -659,7 +659,9 @@ def pa_dist(pha, amp, Nbins=10):
     Returns
     -------
     dist : array
-        Average
+        Average amplitude in each phase bins
+    phase_bins : array
+        The boundaries to each phase bin. Note the length is 1 + len(dist)
     """
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
         raise ValueError('Number of bins in the low frequency oscillation cycle must be an integer >1.')
@@ -674,4 +676,4 @@ def pa_dist(pha, amp, Nbins=10):
                                  pha < phase_bins[b + 1])
         dist[b] = np.mean(amp[t_phase])
 
-    return dist
+    return phase_bins, dist

@@ -254,11 +254,12 @@ def test_padist():
     np.random.seed(0)
     Nbins = np.random.randint(2, 20)
     pha, amp = pa_series(data, data, (13, 30), (80, 200))
-    dist = pa_dist(pha, amp, Nbins=Nbins)
+    boundaries, dist = pa_dist(pha, amp, Nbins=Nbins)
     assert len(dist) == Nbins
+    assert len(boundaries) == Nbins + 1
 
     # Confirm consistency
-    dist = pa_dist(pha, amp, Nbins=10)
+    _, dist = pa_dist(pha, amp, Nbins=10)
     assert np.allclose(dist[0], 12.13961, atol=10 ** -5)
 
 
