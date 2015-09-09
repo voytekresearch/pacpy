@@ -18,7 +18,3 @@ We assume [Anaconda](https://store.continuum.io/cshop/anaconda/) is installed. T
 ## Matlab
 
 The wrapped for MATLAB can be found at, https://github.com/voytekresearch/pacmat
-
-## R
-
-The wrapped for R can be found at, https://github.com/voytekresearch/pacR
