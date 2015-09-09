@@ -39,7 +39,7 @@ def _range_sanity(f_lo=None, f_hi=None):
             raise ValueError("Elements in f_hi must be > 0")
 
 
-def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
+def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None, dohilbert = True):
     """
     Calculate PAC using the phase-locking value (PLV) method from prefiltered
     signals
@@ -58,8 +58,17 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The sampling rate (default = 1000Hz)
     filterfn : function
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
+        If False, the 'lo' and 'hi' inputs should be pre-filtered. For PLV,
+        'hi' should be the low bandpass of the amplitude of the high bandpass
+        of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
+    dohilbert : boolean
+        If False, the 'lo' and 'hi' inputs should be the phase time serieses to
+        be compared with PLV. Specifically, 'lo' should be the phase time series
+        of the low bandpass of the original signal, and 'hi' should be the phase
+        time series of the low bandpass of the amplitude of the high bandpass
+        of the original signal.
 
     Returns
     -------
@@ -70,6 +79,10 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Arg check
     _x_sanity(lo, hi)
     _range_sanity(f_lo, f_hi)
+    
+    # If the user skips the hilbert step, they must also not apply a filter
+    if dohilbert == False:
+        filterfn = False
 
     # Filter setup
     if filterfn is None:
@@ -79,14 +92,24 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         filter_kwargs = {}
 
     # Filter
-    xlo = filterfn(lo, f_lo, fs, **filter_kwargs)
-    xhi = filterfn(hi, f_hi, fs, **filter_kwargs)
-    amp = np.abs(hilbert(xhi))
-    xhiamplo = filterfn(amp, f_lo, fs, **filter_kwargs)
+    if filterfn != False:
+        xlo = filterfn(lo, f_lo, fs, **filter_kwargs)
+        xhi = filterfn(hi, f_hi, fs, **filter_kwargs)
+        amp = np.abs(hilbert(xhi))
+        xhiamplo = filterfn(amp, f_lo, fs, **filter_kwargs)
+    else:
+        xlo = lo
+        xhiamplo = hi
 
+    # Calculate phase with hilbert transform
+    if dohilbert:
+        pha1 = np.angle(hilbert(xlo))
+        pha2 = np.angle(hilbert(xhiamplo))
+    else:
+        pha1 = lo
+        pha2 = hi
+    
     # Calculate PLV
-    pha1 = np.angle(hilbert(xlo))
-    pha2 = np.angle(hilbert(xhiamplo))
     pac = np.abs(np.sum(np.exp(1j * (pha1 - pha2)))) / len(xlo)
 
     return pac
