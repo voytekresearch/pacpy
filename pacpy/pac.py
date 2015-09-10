@@ -56,8 +56,16 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The low frequency filtering range
     fs : float
         The sampling rate (default = 1000Hz)
-    filterfn : function
+    filterfn : function, False
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
+        
+        False activates 'EXPERT MODE'. 
+        - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
+        - In expert mode the user needs to filter the data AND apply the 
+        hilbert transform. 
+        - This requires that 'lo' be the phase time series of the low-bandpass
+        filtered signal, and 'hi' be the phase time series of the low-bandpass
+        of the amplitude of the high-bandpass of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
 
@@ -78,16 +86,18 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     if filter_kwargs is None:
         filter_kwargs = {}
 
-    # Filter
-    xlo = filterfn(lo, f_lo, fs, **filter_kwargs)
-    xhi = filterfn(hi, f_hi, fs, **filter_kwargs)
-    amp = np.abs(hilbert(xhi))
-    xhiamplo = filterfn(amp, f_lo, fs, **filter_kwargs)
-
+    # Filter then hilbert
+    if filterfn is not False:
+        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
+        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+        amp = np.abs(hilbert(hi))
+        hi = filterfn(amp, f_lo, fs, **filter_kwargs)
+        
+        lo = np.angle(hilbert(lo))
+        hi = np.angle(hilbert(hi))
+      
     # Calculate PLV
-    pha1 = np.angle(hilbert(xlo))
-    pha2 = np.angle(hilbert(xhiamplo))
-    pac = np.abs(np.sum(np.exp(1j * (pha1 - pha2)))) / len(xlo)
+    pac = np.abs(np.sum(np.exp(1j * (lo - hi)))) / len(lo)
 
     return pac
 
@@ -111,6 +121,14 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
         The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
+        
+        False activates 'EXPERT MODE'. 
+        - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
+        - In expert mode the user needs to filter the data AND apply the 
+        hilbert transform. 
+        - This requires that 'lo' be the phase time series of the low-bandpass
+        filtered signal, and 'hi' be the amplitude time series of the high-
+        bandpass of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
     Nbins : int
@@ -135,14 +153,16 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
     if filter_kwargs is None:
         filter_kwargs = {}
 
-    # Filter
-    lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-    hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-
-    # Calculate phase and amplitude time series
-    amp = np.abs(hilbert(hi))
-    pha = np.angle(hilbert(lo))
-    phadeg = np.degrees(pha)
+    # Filter then hilbert
+    if filterfn is not False:
+        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
+        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+    
+        hi = np.abs(hilbert(hi))
+        lo = np.angle(hilbert(lo))
+        
+    # Convert the phase time series from radians to degrees
+    phadeg = np.degrees(lo)
 
     # Calculate PAC
     binsize = 360 / Nbins
@@ -151,7 +171,7 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
     for b in range(len(phase_lo)):
         phaserange = np.logical_and(phadeg >= phase_lo[b],
                                     phadeg < (phase_lo[b] + binsize))
-        mean_amp[b] = np.mean(amp[phaserange])
+        mean_amp[b] = np.mean(hi[phaserange])
 
     p_j = np.zeros(len(phase_lo))
     for b in range(len(phase_lo)):
@@ -182,6 +202,14 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
+        
+        False activates 'EXPERT MODE'. 
+        - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
+        - In expert mode the user needs to filter the data AND apply the 
+        hilbert transform. 
+        - This requires that 'lo' be the phase time series of the low-bandpass
+        filtered signal, and 'hi' be the amplitude time series of the high-
+        bandpass of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
 
@@ -202,17 +230,17 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     if filter_kwargs is None:
         filter_kwargs = {}
 
-    # Filter
-    lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-    hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-
-    # Phase and amplitude time series
-    amp = np.abs(hilbert(hi))
-    pha = np.angle(hilbert(lo))
-
+    # Filter then hilbert
+    if filterfn is not False:
+        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
+        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+    
+        hi = np.abs(hilbert(hi))
+        lo = np.angle(hilbert(lo))
+        
     # First prepare GLM
-    y = amp
-    X_pre = np.vstack((np.cos(pha), np.sin(pha)))
+    y = hi
+    X_pre = np.vstack((np.cos(lo), np.sin(lo)))
     X = X_pre.T
     X = sm.add_constant(X, prepend=False)
 
@@ -222,7 +250,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Calculate PAC from GLM residuals
     pac = 1 - np.sum(res.resid_deviance ** 2) / np.sum(
-        (amp - np.mean(amp)) ** 2)
+        (hi - np.mean(hi)) ** 2)
 
     return pac
 
@@ -245,6 +273,14 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
+        
+        False activates 'EXPERT MODE'. 
+        - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
+        - In expert mode the user needs to filter the data AND apply the 
+        hilbert transform. 
+        - This requires that 'lo' be the phase time series of the low-bandpass
+        filtered signal, and 'hi' be the amplitude time series of the high-
+        bandpass of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
     Returns
@@ -264,14 +300,16 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     if filter_kwargs is None:
         filter_kwargs = {}
 
-    # Filter
-    lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-    hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+    # Filter then hilbert
+    if filterfn is not False:
+        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
+        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+    
+        hi = np.abs(hilbert(hi))
+        lo = np.angle(hilbert(lo))
 
-    # PAC
-    amp = np.abs(hilbert(hi))
-    pha = np.angle(hilbert(lo))
-    pac = np.abs(np.mean(amp * np.exp(1j * pha)))
+    # Calculate modulation index
+    pac = np.abs(np.mean(hi * np.exp(1j * lo)))
     return pac
 
 
@@ -293,6 +331,14 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
+        
+        False activates 'EXPERT MODE'. 
+        - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
+        - In expert mode the user needs to filter the data AND apply the 
+        hilbert transform. 
+        - This requires that 'lo' be the phase time series of the low-bandpass
+        filtered signal, and 'hi' be the amplitude time series of the high-
+        bandpass of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
 
@@ -313,14 +359,16 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     if filter_kwargs is None:
         filter_kwargs = {}
 
-    # Filter
-    lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-    hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+    # Filter then hilbert
+    if filterfn is not False:
+        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
+        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+    
+        hi = np.abs(hilbert(hi))
+        lo = np.angle(hilbert(lo))
 
-    # PAC
-    amp = np.abs(hilbert(hi))
-    pha = np.angle(hilbert(lo))
-    pac = np.abs(np.sum(amp * np.exp(1j * pha))) / (np.sqrt(len(pha)) * np.sqrt(np.sum(amp**2)))
+    # Calculate PAC
+    pac = np.abs(np.sum(hi * np.exp(1j * lo))) / (np.sqrt(len(lo)) * np.sqrt(np.sum(hi**2)))
     return pac
 
 
