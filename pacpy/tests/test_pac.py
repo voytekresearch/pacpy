@@ -72,15 +72,10 @@ def test_plv():
     datahi = firf(data, (80,200))
     datahiamp = np.abs(hilbert(datahi))
     datahiamplo = firf(datahiamp, (13,30))
-    assert np.allclose(
-        plv(datalo, datahiamplo, (13, 30), (80, 200), filterfn=False),
-        plv(data, data, (13, 30), (80, 200)), atol=10 ** -5)
-        
-    # Test that dohilbert = False works as expected
     pha1 = np.angle(hilbert(datalo))
     pha2 = np.angle(hilbert(datahiamplo))
     assert np.allclose(
-        plv(pha1, pha2, (13, 30), (80, 200), dohilbert=False),
+        plv(pha1, pha2, (13, 30), (80, 200), filterfn=False),
         plv(data, data, (13, 30), (80, 200)), atol=10 ** -5)
     
 
@@ -105,6 +100,15 @@ def test_glm():
 
     lo, hi = genPAC0()
     assert glm(lo, hi, (4, 6), (90, 110)) < 0.01
+    
+    # Test that Filterfn = False works as expected
+    datalo = firf(data, (13,30))
+    datahi = firf(data, (80,200))
+    pha = np.angle(hilbert(datalo))
+    amp = np.abs(hilbert(datahi))
+    assert np.allclose(
+        glm(pha, amp, (13, 30), (80, 200), filterfn=False),
+        glm(data, data, (13, 30), (80, 200)), atol=10 ** -5)
 
 
 def test_mi_tort():
@@ -128,6 +132,15 @@ def test_mi_tort():
 
     lo, hi = genPAC0()
     assert mi_tort(lo, hi, (4, 6), (90, 110)) < 10 ** -5
+    
+    # Test that Filterfn = False works as expected
+    datalo = firf(data, (13,30))
+    datahi = firf(data, (80,200))
+    pha = np.angle(hilbert(datalo))
+    amp = np.abs(hilbert(datahi))
+    assert np.allclose(
+        mi_tort(pha, amp, (13, 30), (80, 200), filterfn=False),
+        mi_tort(data, data, (13, 30), (80, 200)), atol=10 ** -5)
 
 
 def test_mi_canolty():
@@ -153,6 +166,15 @@ def test_mi_canolty():
 
     lo, hi = genPAC0()
     assert mi_canolty(lo, hi, (4, 6), (90, 110)) < 0.001
+    
+    # Test that Filterfn = False works as expected
+    datalo = firf(data, (13,30))
+    datahi = firf(data, (80,200))
+    pha = np.angle(hilbert(datalo))
+    amp = np.abs(hilbert(datahi))
+    assert np.allclose(
+        mi_canolty(pha, amp, (13, 30), (80, 200), filterfn=False),
+        mi_canolty(data, data, (13, 30), (80, 200)), atol=10 ** -5)
 
 
 def test_ozkurt():
@@ -179,6 +201,15 @@ def test_ozkurt():
 
     lo, hi = genPAC0()
     assert ozkurt(lo, hi, (4, 6), (90, 110)) < 0.001
+    
+    # Test that Filterfn = False works as expected
+    datalo = firf(data, (13,30))
+    datahi = firf(data, (80,200))
+    pha = np.angle(hilbert(datalo))
+    amp = np.abs(hilbert(datahi))
+    assert np.allclose(
+        ozkurt(pha, amp, (13, 30), (80, 200), filterfn=False),
+        ozkurt(data, data, (13, 30), (80, 200)), atol=10 ** -5)
 
 
 def test_otc():
