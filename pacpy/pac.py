@@ -73,6 +73,18 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     -------
     pac : scalar
         PAC value
+        
+    Usage
+    -----
+    >>> import numpy as np
+    >>> from scipy.signal import hilbert
+    >>> from pacpy.pac import plv
+    >>> t = np.arange(0, 10, .001) # Define time array
+    >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+    >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+    >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+    >>> plv(lo, hi, (4,8), (80,150)) # Calculate PAC
+    0.998263840824846
     """
 
     # Arg check
@@ -138,6 +150,18 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
     -------
     pac : scalar
         PAC value
+        
+    Usage
+    -----
+    >>> import numpy as np
+    >>> from scipy.signal import hilbert
+    >>> from pacpy.pac import mi_tort
+    >>> t = np.arange(0, 10, .001) # Define time array
+    >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+    >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+    >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+    >>> mi_tort(lo, hi, (4,8), (80,150)) # Calculate PAC
+    0.34148127875
     """
 
     # Arg check
@@ -217,6 +241,18 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     -------
     pac : scalar
         PAC value
+        
+    Usage
+    -----
+    >>> import numpy as np
+    >>> from scipy.signal import hilbert
+    >>> from pacpy.pac import glm
+    >>> t = np.arange(0, 10, .001) # Define time array
+    >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+    >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+    >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+    >>> glm(lo, hi, (4,8), (80,150)) # Calculate PAC
+    0.67066033413
     """
 
     # Arg check
@@ -259,6 +295,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the modulation index (MI) method defined in Canolty,
     2006
+    
     Parameters
     ----------
     lo : array-like, 1d
@@ -283,10 +320,23 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         bandpass of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
+        
     Returns
     -------
     pac : scalar
       PAC value
+        
+    Usage
+    -----
+    >>> import numpy as np
+    >>> from scipy.signal import hilbert
+    >>> from pacpy.pac import mi_canolty
+    >>> t = np.arange(0, 10, .001) # Define time array
+    >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+    >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+    >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+    >>> mi_canolty(lo, hi, (4,8), (80,150)) # Calculate PAC
+    0.21644573040
     """
 
     # Arg check
@@ -346,6 +396,18 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     -------
     pac : scalar
       PAC value
+        
+    Usage
+    -----
+    >>> import numpy as np
+    >>> from scipy.signal import hilbert
+    >>> from pacpy.pac import ozkurt
+    >>> t = np.arange(0, 10, .001) # Define time array
+    >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+    >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+    >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+    >>> ozkurt(lo, hi, (4,8), (80,150)) # Calculate PAC
+    0.48033603055
     """
 
     # Arg check
@@ -410,16 +472,19 @@ def otc(x, f_hi, f_step, fs=1000,
         samples at which a high frequency event occurs
     mod_sig : array
         modulation signal (see Dvorak, 2014)
-
-    Algorithm (may be changed in the future)
-    ---------
-    * Calculate time-frequency representation
-    * Define time locking events
-    * Calculate modulatory signal for each center frequency
-    * Calculate modulation strength for each frequency
-    * Identify frequency with the max modulation strength, and set PAC
-      equal to that maximal modulation strength
-
+        
+    Usage
+    -----
+    >>> import numpy as np
+    >>> from scipy.signal import hilbert
+    >>> from pacpy.pac import otc
+    >>> t = np.arange(0, 10, .001) # Define time array
+    >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+    >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+    >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+    >>> pac, _, _, _ = otc(lo + hi, (4,8), (80,150)) # Calculate PAC
+    >>> print pac
+    1.96793361799
     """
 
     # Arg check
@@ -596,6 +661,20 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     comod : array-like, 2d
         Matrix of phase-amplitude coupling values for each combination of the
         phase frequency bin and the amplitude frequency bin
+        
+    Usage
+    -----
+    >>> import numpy as np
+    >>> from scipy.signal import hilbert
+    >>> from pacpy.pac import comodulogram
+    >>> t = np.arange(0, 10, .001) # Define time array
+    >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+    >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+    >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+    >>> comod = comodulogram(lo, hi, (5,25), (75,175), 10, 50) # Calculate PAC
+    >>> print comod
+    [[ 0.33562658  0.3156674 ]
+     [ 0.17943107  0.11714463]]
     """
 
     # Arg check
@@ -668,6 +747,19 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         Time series of phase
     amp : array-like, 1d
         Time series of amplitude
+        
+    Usage
+    -----
+    >>> import numpy as np
+    >>> from scipy.signal import hilbert
+    >>> from pacpy.pac import pa_series
+    >>> t = np.arange(0, 10, .001) # Define time array
+    >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+    >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+    >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+    >>> pha, amp = pa_series(lo, hi, (4,8), (80,150))
+    >>> print pha
+    [-1.57079633 -1.53192376 -1.49301802 ..., -1.64840672 -1.6095709 -1.57079634]
     """
 
     # Arg check
@@ -710,6 +802,22 @@ def pa_dist(pha, amp, Nbins=10):
         Average amplitude in each phase bins
     phase_bins : array
         The boundaries to each phase bin. Note the length is 1 + len(dist)
+        
+    Usage
+    -----
+    >>> import numpy as np
+    >>> from scipy.signal import hilbert
+    >>> from pacpy.pac import pa_series, pa_dist
+    >>> t = np.arange(0, 10, .001) # Define time array
+    >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+    >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+    >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+    >>> pha, amp = pa_series(lo, hi, (4,8), (80,150))
+    >>> phase_bins, dist = pa_dist(pha, amp)
+    >>> print dist
+   [  8.50785050e-01   9.51196710e-01   5.07891376e-01   3.44834587e-02
+   2.59210539e-03   3.95967672e-04   3.49264554e-04   5.64576664e-04
+   1.19064631e-02   1.57014062e-01]
     """
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
         raise ValueError('Number of bins in the low frequency oscillation cycle must be an integer >1.')
