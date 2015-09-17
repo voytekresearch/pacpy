@@ -482,7 +482,7 @@ def otc(x, f_hi, f_step, fs=1000,
     >>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
     >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
-    >>> pac, _, _, _ = otc(lo + hi, (4,8), (80,150)) # Calculate PAC
+    >>> pac, _, _, _ = otc(lo + hi, (80,150), 4) # Calculate PAC
     >>> print pac
     1.96793361799
     """
