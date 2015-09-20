@@ -89,7 +89,6 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Arg check
     _x_sanity(lo, hi)
-    _range_sanity(f_lo, f_hi)
 
     # Filter setup
     if filterfn is None:
@@ -100,6 +99,7 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Filter then hilbert
     if filterfn is not False:
+        _range_sanity(f_lo, f_hi)
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
         amp = np.abs(hilbert(hi))
@@ -166,7 +166,6 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
 
     # Arg check
     _x_sanity(lo, hi)
-    _range_sanity(f_lo, f_hi)
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
         raise ValueError('Number of bins in the low frequency oscillation cycle must be an integer >1.')
 
@@ -179,6 +178,7 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
 
     # Filter then hilbert
     if filterfn is not False:
+        _range_sanity(f_lo, f_hi)
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
     
@@ -257,7 +257,6 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Arg check
     _x_sanity(lo, hi)
-    _range_sanity(f_lo, f_hi)
 
     # Filter series
     if filterfn is None:
@@ -268,6 +267,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Filter then hilbert
     if filterfn is not False:
+        _range_sanity(f_lo, f_hi)
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
     
@@ -341,7 +341,6 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Arg check
     _x_sanity(lo, hi)
-    _range_sanity(f_lo, f_hi)
 
     # Filter series
     if filterfn is None:
@@ -352,6 +351,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Filter then hilbert
     if filterfn is not False:
+        _range_sanity(f_lo, f_hi)
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
     
@@ -412,7 +412,6 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Arg check
     _x_sanity(lo, hi)
-    _range_sanity(f_lo, f_hi)
 
     # Filter series
     if filterfn is None:
@@ -423,6 +422,7 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Filter then hilbert
     if filterfn is not False:
+        _range_sanity(f_lo, f_hi)
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
     
