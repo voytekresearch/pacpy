@@ -288,7 +288,7 @@ def pha_waveform(x, f_narrow,
     
 def pha_filtzx(x, f_narrow, fs = 1000., 
                Fpeak = True, Ftrough = True, Fzerocross = True, 
-               filterfn=None, filter_kwargs=None):
+               filterfn=None, filter_kwargs=None, return_pt = False):
     """
     
     Calculate the phase time series of 'x' by identifying zerocrossings
@@ -306,10 +306,20 @@ def pha_filtzx(x, f_narrow, fs = 1000.,
         guesses of peaks and troughs
     fs : float
         The sampling rate (default = 1000Hz)
+    Fpeak : boolean
+        if True, peaks times are estimated
+    Ftrough : boolean
+        if True, troughs times are estimated
+    Fzerocross : boolean
+        if True, zero crossings are estimated in the same manner as peaks and
+        troughs
     filterfn : function, False
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
+    return_pt : boolean
+        if True, return the peaks and troughs as arrays in the 2nd and 3rd
+        output arguments, respectively
         
     Returns
     -------
@@ -429,7 +439,11 @@ def pha_filtzx(x, f_narrow, fs = 1000.,
                        
     # Restrict phase between -pi and pi
     pha = np.angle(np.exp(1j*pha))
-    return pha
+    
+    if return_pt:
+        return pha, peaksB, troughsB
+    else:
+        return pha
     
     
     
@@ -439,3 +453,10 @@ def em_lfpow():
     only use the time points of highest low frequency power
     """
     return 0
+    
+def removeedge(x, samp):
+    '''
+    Trim the array x on both sides by the number of samples in 'samp' in order
+    to remove effects of filtering edge artifact
+    '''
+    return x[samp:-samp]
