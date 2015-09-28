@@ -832,4 +832,4 @@ def pa_dist(pha, amp, Nbins=10):
                                  pha < phase_bins[b + 1])
         dist[b] = np.mean(amp[t_phase])
 
-    return phase_bins, dist
+    return phase_bins[:-1], dist
