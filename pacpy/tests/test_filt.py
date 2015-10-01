@@ -36,20 +36,6 @@ def test_morletf():
         np.sum(np.abs(morletf(data, 21.5))), 40661855.060118973, atol=10 ** -5)
     assert len(morletf(data, 21.5)) == len(data)
 
-
-def test_rmvedge():
-    """
-    Confirm that function is removing edges appropriately
-    """
-    # Load data
-    data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    fs = 1000
-    cf = 20
-    w = 7
-    win = np.floor((w * fs / cf) / 2.0)
-    assert len(rmv_edgeart(data, w, cf, fs)) == len(data) - 2 * win
-
-
 def test_morletT():
     """
     Confirm that function output size is consistent with inputs
