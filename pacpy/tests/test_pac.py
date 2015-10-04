@@ -303,7 +303,7 @@ def test_padist():
     pha, amp = pa_series(data, data, (13, 30), (80, 200))
     boundaries, dist = pa_dist(pha, amp, Nbins=Nbins)
     assert len(dist) == Nbins
-    assert len(boundaries) == Nbins + 1
+    assert len(boundaries) == Nbins
 
     # Confirm consistency
     _, dist = pa_dist(pha, amp, Nbins=10)
