@@ -685,6 +685,13 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     if da <= 0:
         raise ValueError('Width of hi frequqnecy range must be positive')
 
+    # method check
+    method2fun = {'plv' : plv, 'mi_tort' : mi_tort, 'mi_canolty' : mi_canolty,
+        'ozkurt' : ozkurt, 'glm' : glm}
+    pac_fun = method2fun.get(pac_method, None)
+    if pac_fun == None:
+        raise ValueError('PAC method given is invalid.')
+
     # Calculate palette frequency parameters
     f_phases = np.arange(p_range[0], p_range[1], dp)
     f_amps = np.arange(a_range[0], a_range[1], da)
@@ -699,23 +706,8 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
         for a in range(A):
             f_hi = (f_amps[a], f_amps[a] + da)
 
-            if pac_method == 'plv':
-                comod[p,a] = plv(lo, hi, f_lo, f_hi, fs=fs,
-                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
-            elif pac_method == 'mi_tort':
-                comod[p,a] = mi_tort(lo, hi, f_lo, f_hi, fs=fs,
-                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
-            elif pac_method == 'mi_canolty':
-                comod[p,a] = mi_canolty(lo, hi, f_lo, f_hi, fs=fs,
-                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
-            elif pac_method == 'ozkurt':
-                comod[p,a] = ozkurt(lo, hi, f_lo, f_hi, fs=fs,
-                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
-            elif pac_method == 'glm':
-                comod[p,a] = glm(lo, hi, f_lo, f_hi, fs=fs,
-                                 filterfn=filterfn, filter_kwargs=filter_kwargs)
-            else:
-                raise ValueError('PAC method given is invalid.')
+            comod[p,a] = pac_fun(lo, hi, f_lo, f_hi, fs=fs,
+                filterfn=filterfn, filter_kwargs=filter_kwargs)
 
     return comod
 
