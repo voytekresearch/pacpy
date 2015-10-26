@@ -5,8 +5,6 @@ A module to calculate phase-amplitude coupling in Python.
 
 ## Install
 
-Not yet uploaded to pypi (...soon).  To install:
-
 	pip install pacpy
 
 Tested on Linux (Ubuntu 4.10), OS X (10.10.4), and Windows 9.
