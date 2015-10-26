@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pacpy',
-    version='0.0.1',
+    version='1.0',
     description="A module to calculate phase-amplitude coupling",
     long_description = """
     A module to calculate phase-amplitude coupling of neural time series.
