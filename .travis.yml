@@ -18,9 +18,10 @@ before_install:
 
 # Install packages
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pytest statsmodels
-  # - pip install -r requirements.txt
-  - pip install . 
+  conda create -n testenv --yes pip python=2.7
+  conda update conda --yes
+  source activate testenv
+  conda install --yes --file requirements.txt
 
 # command to run tests
 script: py.test pacpy/tests
