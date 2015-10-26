@@ -58,7 +58,7 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The sampling rate (default = 1000Hz)
     filterfn : function, False
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
-        
+
         False activates 'EXPERT MODE'. 
         - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
         - In expert mode the user needs to filter the data AND apply the 
@@ -73,7 +73,7 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     -------
     pac : scalar
         PAC value
-        
+
     Usage
     -----
     >>> import numpy as np
@@ -104,17 +104,18 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
         amp = np.abs(hilbert(hi))
         hi = filterfn(amp, f_lo, fs, **filter_kwargs)
-        
+
         lo = np.angle(hilbert(lo))
         hi = np.angle(hilbert(hi))
-      
+
     # Calculate PLV
     pac = np.abs(np.sum(np.exp(1j * (lo - hi)))) / len(lo)
 
     return pac
 
 
-def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=None):
+def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, 
+        filter_kwargs=None):
     """
     Calculate PAC using the modulation index method from prefiltered
     signals
@@ -133,7 +134,7 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
         The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
-        
+
         False activates 'EXPERT MODE'. 
         - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
         - In expert mode the user needs to filter the data AND apply the 
@@ -150,7 +151,7 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
     -------
     pac : scalar
         PAC value
-        
+
     Usage
     -----
     >>> import numpy as np
@@ -167,7 +168,9 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
     # Arg check
     _x_sanity(lo, hi)
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
-        raise ValueError('Number of bins in the low frequency oscillation cycle must be an integer >1.')
+        raise ValueError(
+            'Number of bins in the low frequency oscillation cycle' 
+            'must be an integer >1.')
 
     # Filter setup
     if filterfn is None:
@@ -181,10 +184,10 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
         _range_sanity(f_lo, f_hi)
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-    
+
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
-        
+
     # Convert the phase time series from radians to degrees
     phadeg = np.degrees(lo)
 
@@ -207,6 +210,17 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, filter_kwargs=
 
     return pac
 
+def _ols(y, X):
+    """Custom OLS (to minimize outside dependecies)"""
+
+    dummy = np.repeat(1.0, X.shape[0]) 
+    X = np.hstack([X,dummy[:, np.newaxis]])
+    
+    beta_hat, resid, _, _ = np.linalg.lstsq(X, y)
+    y_hat = np.dot(X,beta_hat)
+
+    return y_hat, beta_hat
+
 
 def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
@@ -226,7 +240,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
-        
+
         False activates 'EXPERT MODE'. 
         - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
         - In expert mode the user needs to filter the data AND apply the 
@@ -241,7 +255,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     -------
     pac : scalar
         PAC value
-        
+
     Usage
     -----
     >>> import numpy as np
@@ -270,22 +284,19 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         _range_sanity(f_lo, f_hi)
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-    
+
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
-        
+
     # First prepare GLM
     y = hi
     X_pre = np.vstack((np.cos(lo), np.sin(lo)))
     X = X_pre.T
-    X = sm.add_constant(X, prepend=False)
-
-    # Run GLM
-    glm = sm.GLM(y, X)
-    res = glm.fit()
-
+    y_hat, beta_hat = _ols(y, X)
+    resid = y - y_hat
+    
     # Calculate PAC from GLM residuals
-    pac = 1 - np.sum(res.resid_deviance ** 2) / np.sum(
+    pac = 1 - np.sum(resid ** 2) / np.sum(
         (hi - np.mean(hi)) ** 2)
 
     return pac
@@ -295,7 +306,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the modulation index (MI) method defined in Canolty,
     2006
-    
+
     Parameters
     ----------
     lo : array-like, 1d
@@ -310,7 +321,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
-        
+
         False activates 'EXPERT MODE'. 
         - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
         - In expert mode the user needs to filter the data AND apply the 
@@ -320,12 +331,12 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         bandpass of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
-        
+
     Returns
     -------
     pac : scalar
       PAC value
-        
+
     Usage
     -----
     >>> import numpy as np
@@ -354,7 +365,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         _range_sanity(f_lo, f_hi)
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-    
+
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
 
@@ -381,7 +392,7 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The sampling rate (default = 1000Hz)
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
-        
+
         False activates 'EXPERT MODE'. 
         - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
         - In expert mode the user needs to filter the data AND apply the 
@@ -396,7 +407,7 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     -------
     pac : scalar
       PAC value
-        
+
     Usage
     -----
     >>> import numpy as np
@@ -425,12 +436,13 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         _range_sanity(f_lo, f_hi)
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-    
+
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
 
     # Calculate PAC
-    pac = np.abs(np.sum(hi * np.exp(1j * lo))) / (np.sqrt(len(lo)) * np.sqrt(np.sum(hi**2)))
+    pac = np.abs(np.sum(hi * np.exp(1j * lo))) / \
+        (np.sqrt(len(lo)) * np.sqrt(np.sum(hi**2)))
     return pac
 
 
@@ -472,7 +484,7 @@ def otc(x, f_hi, f_step, fs=1000,
         samples at which a high frequency event occurs
     mod_sig : array
         modulation signal (see Dvorak, 2014)
-        
+
     Usage
     -----
     >>> import numpy as np
@@ -492,7 +504,7 @@ def otc(x, f_hi, f_step, fs=1000,
     _range_sanity(None, f_hi)
     # Set default time range for modulatory signal
     if t_modsig is None:
-        t_modsig = (-1,1)
+        t_modsig = (-1, 1)
     if f_step <= 0:
         raise ValueError('Frequency band width must be a positive number.')
     if t_modsig[0] > t_modsig[1]:
@@ -506,7 +518,8 @@ def otc(x, f_hi, f_step, fs=1000,
     F = len(f0s)
     a_events = np.zeros(F, dtype=object)
     for f in range(F):
-        a_events[f] = _peaktimes(zscore(np.abs(tf[f])), prc=event_prc, t_buffer=t_buffer)
+        a_events[f] = _peaktimes(
+            zscore(np.abs(tf[f])), prc=event_prc, t_buffer=t_buffer)
 
     # Calculate the modulation signal
     samp_modsig = np.arange(t_modsig[0] * fs, t_modsig[1] * fs)
@@ -514,7 +527,8 @@ def otc(x, f_hi, f_step, fs=1000,
     S = len(samp_modsig)
     mod_sig = np.zeros([F, S])
 
-    # For each frequency in the time-frequency representation, calculate a modulation signal
+    # For each frequency in the time-frequency representation, calculate a
+    # modulation signal
     for f in range(F):
         # Exclude high frequency events that are too close to the signal
         # boundaries to extract an entire modulation signal
@@ -588,7 +602,8 @@ def _chunk_time(x, samp_buffer=0):
         List of the sample bounds for each chunk
     """
     if samp_buffer < 0:
-        raise ValueError('Buffer between signal peaks must be a positive number')
+        raise ValueError(
+            'Buffer between signal peaks must be a positive number')
     if samp_buffer != int(samp_buffer):
         raise ValueError('Number of samples must be an integer')
 
@@ -661,7 +676,7 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     comod : array-like, 2d
         Matrix of phase-amplitude coupling values for each combination of the
         phase frequency bin and the amplitude frequency bin
-        
+
     Usage
     -----
     >>> import numpy as np
@@ -686,8 +701,8 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
         raise ValueError('Width of hi frequqnecy range must be positive')
 
     # method check
-    method2fun = {'plv' : plv, 'mi_tort' : mi_tort, 'mi_canolty' : mi_canolty,
-        'ozkurt' : ozkurt, 'glm' : glm}
+    method2fun = {'plv': plv, 'mi_tort': mi_tort, 'mi_canolty': mi_canolty,
+                  'ozkurt': ozkurt, 'glm': glm}
     pac_fun = method2fun.get(pac_method, None)
     if pac_fun == None:
         raise ValueError('PAC method given is invalid.')
@@ -706,8 +721,8 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
         for a in range(A):
             f_hi = (f_amps[a], f_amps[a] + da)
 
-            comod[p,a] = pac_fun(lo, hi, f_lo, f_hi, fs=fs,
-                filterfn=filterfn, filter_kwargs=filter_kwargs)
+            comod[p, a] = pac_fun(lo, hi, f_lo, f_hi, fs=fs,
+                                  filterfn=filterfn, filter_kwargs=filter_kwargs)
 
     return comod
 
@@ -739,7 +754,7 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         Time series of phase
     amp : array-like, 1d
         Time series of amplitude
-        
+
     Usage
     -----
     >>> import numpy as np
@@ -794,7 +809,7 @@ def pa_dist(pha, amp, Nbins=10):
         Average amplitude in each phase bins
     phase_bins : array
         The boundaries to each phase bin. Note the length is 1 + len(dist)
-        
+
     Usage
     -----
     >>> import numpy as np
@@ -812,9 +827,11 @@ def pa_dist(pha, amp, Nbins=10):
    1.19064631e-02   1.57014062e-01]
     """
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
-        raise ValueError('Number of bins in the low frequency oscillation cycle must be an integer >1.')
+        raise ValueError(
+            'Number of bins in the low frequency oscillation cycle must be an integer >1.')
     if len(pha) != len(amp):
-        raise ValueError('Phase and amplitude time series must be of same length.')
+        raise ValueError(
+            'Phase and amplitude time series must be of same length.')
 
     phase_bins = np.linspace(-np.pi, np.pi, int(Nbins + 1))
     dist = np.zeros(int(Nbins))
