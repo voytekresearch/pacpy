@@ -22,6 +22,7 @@ install:
   - conda update conda --yes
   - source activate testenv
   - conda install --yes --file requirements.txt
+  - pip install .
 
 # command to run tests
 script: py.test pacpy/tests
