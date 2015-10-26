@@ -114,8 +114,8 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     return pac
 
 
-def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None, 
-        filter_kwargs=None):
+def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
+            filter_kwargs=None):
     """
     Calculate PAC using the modulation index method from prefiltered
     signals
@@ -169,7 +169,7 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
     _x_sanity(lo, hi)
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
         raise ValueError(
-            'Number of bins in the low frequency oscillation cycle' 
+            'Number of bins in the low frequency oscillation cycle'
             'must be an integer >1.')
 
     # Filter setup
@@ -210,14 +210,15 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
 
     return pac
 
+
 def _ols(y, X):
     """Custom OLS (to minimize outside dependecies)"""
 
-    dummy = np.repeat(1.0, X.shape[0]) 
-    X = np.hstack([X,dummy[:, np.newaxis]])
-    
+    dummy = np.repeat(1.0, X.shape[0])
+    X = np.hstack([X, dummy[:, np.newaxis]])
+
     beta_hat, resid, _, _ = np.linalg.lstsq(X, y)
-    y_hat = np.dot(X,beta_hat)
+    y_hat = np.dot(X, beta_hat)
 
     return y_hat, beta_hat
 
@@ -294,7 +295,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     X = X_pre.T
     y_hat, beta_hat = _ols(y, X)
     resid = y - y_hat
-    
+
     # Calculate PAC from GLM residuals
     pac = 1 - np.sum(resid ** 2) / np.sum(
         (hi - np.mean(hi)) ** 2)
