@@ -111,7 +111,7 @@ def butterf(x, f_range, fs=1000, N=2):
     return x_filt
 
 
-def rmv_edgeart(x, w, cf, fs):
+def rmvedgeart(x, w, cf, fs):
     """
     Calculate the number of points to remove for edge artifacts
 

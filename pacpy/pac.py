@@ -6,7 +6,7 @@ from __future__ import division
 import numpy as np
 from scipy.signal import hilbert
 from scipy.stats.mstats import zscore
-from pacpy.filt import firf, morletT
+from pacpy.filt import firf, morletT, rmvedgeart
 import statsmodels.api as sm
 
 
@@ -108,6 +108,19 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         lo = np.angle(hilbert(lo))
         hi = np.angle(hilbert(hi))
 
+        # define the number of cycles in the filter
+        try:
+            w = filter_kwargs['w']
+        except KeyError:
+            if filterfn == firf:
+                w = 7 # firf default
+            else:
+                raise ValueError('Unknown filter length for defined filter function')
+            
+        # remove edge artifacts
+        lo = rmvedgeart(lo, w, f_lo[0], fs)
+        hi = rmvedgeart(hi, w, f_lo[0], fs)
+
     # Calculate PLV
     pac = np.abs(np.sum(np.exp(1j * (lo - hi)))) / len(lo)
 
@@ -187,6 +200,19 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
+
+        # define the number of cycles in the filter
+        try:
+            w = filter_kwargs['w']
+        except KeyError:
+            if filterfn == firf:
+                w = 7 # firf default
+            else:
+                raise ValueError('Unknown filter length for defined filter function')
+            
+        # remove edge artifacts
+        lo = rmvedgeart(lo, w, f_lo[0], fs)
+        hi = rmvedgeart(hi, w, f_lo[0], fs)
 
     # Convert the phase time series from radians to degrees
     phadeg = np.degrees(lo)
@@ -289,6 +315,19 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
 
+        # define the number of cycles in the filter
+        try:
+            w = filter_kwargs['w']
+        except KeyError:
+            if filterfn == firf:
+                w = 7 # firf default
+            else:
+                raise ValueError('Unknown filter length for defined filter function')
+            
+        # remove edge artifacts
+        lo = rmvedgeart(lo, w, f_lo[0], fs)
+        hi = rmvedgeart(hi, w, f_lo[0], fs)
+
     # First prepare GLM
     y = hi
     X_pre = np.vstack((np.cos(lo), np.sin(lo)))
@@ -373,6 +412,19 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
 
+        # define the number of cycles in the filter
+        try:
+            w = filter_kwargs['w']
+        except KeyError:
+            if filterfn == firf:
+                w = 7 # firf default
+            else:
+                raise ValueError('Unknown filter length for defined filter function')
+            
+        # remove edge artifacts
+        lo = rmvedgeart(lo, w, f_lo[0], fs)
+        hi = rmvedgeart(hi, w, f_lo[0], fs)
+
     # Calculate modulation index
     pac = np.abs(np.mean(hi * np.exp(1j * lo)))
     
@@ -451,6 +503,19 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
+
+        # define the number of cycles in the filter
+        try:
+            w = filter_kwargs['w']
+        except KeyError:
+            if filterfn == firf:
+                w = 7 # firf default
+            else:
+                raise ValueError('Unknown filter length for defined filter function')
+            
+        # remove edge artifacts
+        lo = rmvedgeart(lo, w, f_lo[0], fs)
+        hi = rmvedgeart(hi, w, f_lo[0], fs)
 
     # Calculate PAC
     pac = np.abs(np.sum(hi * np.exp(1j * lo))) / \
@@ -797,6 +862,19 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Calculate phase time series and amplitude time series
     pha = np.angle(hilbert(xlo))
     amp = np.abs(hilbert(xhi))
+    
+    # define the number of cycles in the filter
+    try:
+        w = filter_kwargs['w']
+    except KeyError:
+        if filterfn == firf:
+            w = 7 # firf default
+        else:
+            raise ValueError('Unknown filter length for defined filter function')
+        
+    # remove edge artifacts
+    pha = rmvedgeart(pha, w, f_lo[0], fs)
+    amp = rmvedgeart(amp, w, f_lo[0], fs)
 
     return pha, amp
 
