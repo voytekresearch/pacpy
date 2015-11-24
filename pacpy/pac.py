@@ -303,7 +303,8 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     return pac
 
 
-def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
+def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
+               nSurr=100):
     """
     Calculate PAC using the modulation index (MI) method defined in Canolty,
     2006
@@ -332,6 +333,8 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         bandpass of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
+    nSurr : int
+        Number of surrogate tests to run to calculate normalized MI
 
     Returns
     -------
@@ -348,7 +351,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
     >>> mi_canolty(lo, hi, (4,8), (80,150)) # Calculate PAC
-    0.21644573040
+    -0.4431037556749353
     """
 
     # Arg check
@@ -372,7 +375,15 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Calculate modulation index
     pac = np.abs(np.mean(hi * np.exp(1j * lo)))
-    return pac
+    
+    # Calculate surrogate MIs
+    pacS = np.zeros(nSurr)
+    np.random.seed(0)
+    for s in range(nSurr):
+        loS = np.roll(lo,np.random.randint(len(lo)))
+        pacS[s] = np.abs(np.mean(hi * np.exp(1j * loS)))
+        
+    return (pac - np.mean(pacS)) / np.std(pacS)
 
 
 def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
