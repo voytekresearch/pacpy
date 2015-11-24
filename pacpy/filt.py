@@ -19,7 +19,7 @@ def firf(x, f_range, fs=1000, w=7, tw=.15):
         Sampling rate
     w : float
         Length of the filter in terms of the number of cycles 
-        of the oscillation whose frequency is the center of the 
+        of the oscillation whose frequency is the low cutoff of the 
         bandpass filter
     tw : float
         Transition width of the filter in normalized frequency space
@@ -44,8 +44,7 @@ def firf(x, f_range, fs=1000, w=7, tw=.15):
     if np.any(np.array(f_range) < 0):
         raise ValueError('Filter frequencies must be positive.')
 
-    cf = np.mean(f_range)
-    Ntaps = np.floor(w * fs / cf)
+    Ntaps = np.floor(w * fs / f_range[0])
     if len(x) < Ntaps:
         raise RuntimeError(
             'Length of filter is loger than data. ' 
@@ -119,7 +118,7 @@ def rmv_edgeart(x, w, cf, fs):
     x : array
         time series to remove edge artifacts from
     cf : float
-        center frequency of the bandpass filter
+        low cutoff frequency of the bandpass filter
     w : float
         number of cycles
     Fs : float
