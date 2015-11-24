@@ -124,7 +124,7 @@ def rmvedgeart(x, w, cf, fs):
     Fs : float
         Sampling rate
     """
-    win = np.floor((w * fs / cf) / 2.0)
+    win = np.floor(w * fs / cf)
     return x[np.int(win):-np.int(win)]
 
 
