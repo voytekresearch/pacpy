@@ -2,14 +2,15 @@ from __future__ import division
 import numpy as np
 
 from scipy.signal import filtfilt
-from scipy.signal import firwin2
+from scipy.signal import firwin2, firwin
 from scipy.signal import morlet
 from scipy.signal import butter
 
 
-def firf(x, f_range, fs=1000, w=7, tw=.15):
+def firfls(x, f_range, fs=1000, w=3, tw=.15):
     """
     Filter signal with an FIR filter
+    *Like firls in MATLAB
 
     x : array-like, 1d
         Time series to filter
@@ -61,6 +62,56 @@ def firf(x, f_range, fs=1000, w=7, tw=.15):
 
     # Perform filtering
     taps = firwin2(Ntaps, f, m)
+    x_filt = filtfilt(taps, [1], x)
+
+    if any(np.isnan(x_filt)):
+        raise RuntimeError(
+            'Filtered signal contains nans. Adjust filter parameters.')
+
+    return x_filt
+    
+    
+def firf(x, f_range, fs=1000, w=3):
+    """
+    Filter signal with an FIR filter
+    *Like fir1 in MATLAB
+
+    x : array-like, 1d
+        Time series to filter
+    f_range : (low, high), Hz
+        Cutoff frequencies of bandpass filter
+    fs : float, Hz
+        Sampling rate
+    w : float
+        Length of the filter in terms of the number of cycles 
+        of the oscillation whose frequency is the low cutoff of the 
+        bandpass filter
+
+    Returns
+    -------
+    x_filt : array-like, 1d
+        Filtered time series
+    """
+
+    if w <= 0:
+        raise ValueError(
+            'Number of cycles in a filter must be a positive number.')
+
+    nyq = fs / 2
+    if np.any(np.array(f_range) > nyq):
+        raise ValueError('Filter frequencies must be below nyquist rate.')
+
+    if np.any(np.array(f_range) < 0):
+        raise ValueError('Filter frequencies must be positive.')
+
+    Ntaps = np.floor(w * fs / f_range[0])
+    if len(x) < Ntaps:
+        raise RuntimeError(
+            'Length of filter is loger than data. ' 
+            'Provide more data or a shorter filter.')
+
+    # Perform filtering
+    taps = firwin(Ntaps, f_range)
     x_filt = filtfilt(taps, [1], x)
 
     if any(np.isnan(x_filt)):
@@ -128,7 +179,7 @@ def rmvedgeart(x, w, cf, fs):
     return x[np.int(win):-np.int(win)]
 
 
-def morletT(x, f0s, w=7, fs=1000, s=1):
+def morletT(x, f0s, w=3, fs=1000, s=1):
     """
     Calculate the time-frequency representation of the signal 'x' over the
     frequencies in 'f0s' using morlet wavelets
@@ -166,7 +217,7 @@ def morletT(x, f0s, w=7, fs=1000, s=1):
     return mwt
 
 
-def morletf(x, f0, fs=1000, w=7, s=1, M=None, norm='sss'):
+def morletf(x, f0, fs=1000, w=3, s=1, M=None, norm='sss'):
     """
     Convolve a signal with a complex wavelet
     The real part is the filtered signal

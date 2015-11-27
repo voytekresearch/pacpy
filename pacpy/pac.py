@@ -524,7 +524,7 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
 
 def otc(x, f_hi, f_step, fs=1000,
-        w=7, event_prc=95, t_modsig=None, t_buffer=.01):
+        w=3, event_prc=95, t_modsig=None, t_buffer=.01):
     """
     Calculate the oscillation-triggered coupling measure of phase-amplitude
     coupling from Dvorak, 2014.

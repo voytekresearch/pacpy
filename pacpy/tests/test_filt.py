@@ -1,18 +1,18 @@
 import numpy as np
 import pacpy
 import os
-from pacpy.filt import butterf, firf, morletf, rmv_edgeart, morletT
+from pacpy.filt import butterf, firfls, morletf, rmv_edgeart, morletT, firf
 
 
-def test_firf():
+def test_firfls():
     """
     Confirm consistency in FIR filtering
     """
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        np.sum(np.abs(firf(data, (13, 30)))), 6421935.78673, atol=10 ** -5)
-    assert len(firf(data, (13, 30))) == len(data)
+        np.sum(np.abs(firfls(data, (13, 30)))), 6421935.78673, atol=10 ** -5)
+    assert len(firfls(data, (13, 30))) == len(data)
 
 
 def test_butterf():
