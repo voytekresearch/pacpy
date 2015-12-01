@@ -207,8 +207,7 @@ def test_comod():
     dp = 5
     da = 50
     a = comodulogram(data, data, p_range, a_range, dp, da)
-    print a[0][0]
-    assert np.allclose(a[0][0], 0.00287, atol=10 ** -5)
+    assert np.allclose(a[0][0], 0.00315, atol=10 ** -5)
     assert np.shape(a) == (len(np.arange(p_range[0], p_range[1], dp)), len(
         np.arange(a_range[0], a_range[1], da)))
 
