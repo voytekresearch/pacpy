@@ -31,4 +31,4 @@ def test_morletf():
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        np.sum(np.abs(morletf(data, 21.5))), 40100624.2613, atol=10 ** -4)
+        np.sum(np.abs(morletf(data, 21.5))), 40125678.7918, atol=10 ** -4)
