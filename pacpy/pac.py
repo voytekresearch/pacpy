@@ -6,8 +6,8 @@ from __future__ import division
 import numpy as np
 from scipy.signal import hilbert
 from scipy.stats.mstats import zscore
-from pacpy.filt import firf, morletT, rmvedgeart
-import statsmodels.api as sm
+from pacpy.filt import firf, rmvedgeart
+from pacpy.util import morletT
 
 
 def _x_sanity(lo=None, hi=None):
@@ -435,6 +435,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
         loS = np.roll(lo,np.random.randint(len(lo)))
         pacS[s] = np.abs(np.mean(hi * np.exp(1j * loS)))
         
+    # Return z-score of observed PAC compared to null distribution
     return (pac - np.mean(pacS)) / np.std(pacS)
 
 

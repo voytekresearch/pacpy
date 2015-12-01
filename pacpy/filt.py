@@ -97,7 +97,7 @@ def firf(x, f_range, fs=1000, w=3):
         raise ValueError(
             'Number of cycles in a filter must be a positive number.')
 
-    nyq = fs / 2
+    nyq = np.float(fs / 2)
     if np.any(np.array(f_range) > nyq):
         raise ValueError('Filter frequencies must be below nyquist rate.')
 
@@ -111,7 +111,7 @@ def firf(x, f_range, fs=1000, w=3):
             'Provide more data or a shorter filter.')
 
     # Perform filtering
-    taps = firwin(Ntaps, f_range)
+    taps = firwin(Ntaps, f_range/nyq, pass_zero=False)
     x_filt = filtfilt(taps, [1], x)
 
     if any(np.isnan(x_filt)):

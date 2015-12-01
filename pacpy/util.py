@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import math
 from pacpy.pac import _x_sanity, _range_sanity
-from pacpy.filt import firf
+from pacpy.filt import firf, morletf
 
 
 def fasthilbert(x, axis=-1):
@@ -200,3 +200,41 @@ def removeedge(x, samp):
     to remove effects of filtering edge artifact
     '''
     return x[samp:-samp]
+
+
+def morletT(x, f0s, w=3, fs=1000, s=1):
+    """
+    Calculate the time-frequency representation of the signal 'x' over the
+    frequencies in 'f0s' using morlet wavelets
+
+    Parameters
+    ----------
+    x : array
+        time series
+    f0s : array
+        frequency axis
+    w : float
+        Length of the filter in terms of the number of cycles 
+        of the oscillation whose frequency is the center of the 
+        bandpass filter
+    Fs : float
+        Sampling rate
+    s : float
+        Scaling factor
+
+    Returns
+    -------
+    mwt : 2-D array
+        time-frequency representation of signal x
+    """
+    if w <= 0:
+        raise ValueError(
+            'Number of cycles in a filter must be a positive number.')
+
+    T = len(x)
+    F = len(f0s)
+    mwt = np.zeros([F, T], dtype=complex)
+    for f in range(F):
+        mwt[f] = morletf(x, f0s[f], fs=fs, w=w, s=s)
+
+    return mwt
