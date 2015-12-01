@@ -6,8 +6,7 @@ from __future__ import division
 import numpy as np
 from scipy.signal import hilbert
 from scipy.stats.mstats import zscore
-from pacpy.filt import firf, morletT
-import statsmodels.api as sm
+from pacpy.filt import firf, morletf
 
 
 def _x_sanity(lo=None, hi=None):
@@ -107,11 +106,38 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
         lo = np.angle(hilbert(lo))
         hi = np.angle(hilbert(hi))
-
+        
+    # Make arrays the same size
+    lo, hi = _sameedgeart(lo,hi)
+        
     # Calculate PLV
     pac = np.abs(np.sum(np.exp(1j * (lo - hi)))) / len(lo)
 
     return pac
+    
+    
+def _sameedgeart(lo,hi):
+    """
+    Remove extra edge artifact from the signal with the shorter filter
+    so that its time series is identical to that of the filtered signal
+    with a longer filter.
+    """
+    if len(lo) < len(hi):
+        Ndiff = len(hi) - len(lo)
+        if Ndiff % 2 != 0:
+            raise ValueError('Difference in filtered signal lengths should be even')
+        hi = hi[np.int(Ndiff/2):np.int(-Ndiff/2)]
+        return lo, hi
+        
+    elif len(lo) > len(hi):
+        Ndiff = len(lo) - len(hi)
+        if Ndiff % 2 != 0:
+            raise ValueError('Difference in filtered signal lengths should be even')
+        lo = lo[np.int(Ndiff/2):np.int(-Ndiff/2)]
+        return lo, hi
+        
+    else:
+        return lo, hi
 
 
 def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
@@ -187,7 +213,10 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
-
+        
+    # Make arrays the same size
+    lo, hi = _sameedgeart(lo,hi)
+        
     # Convert the phase time series from radians to degrees
     phadeg = np.degrees(lo)
 
@@ -288,7 +317,10 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
-
+        
+    # Make arrays the same size
+    lo, hi = _sameedgeart(lo,hi)
+        
     # First prepare GLM
     y = hi
     X_pre = np.vstack((np.cos(lo), np.sin(lo)))
@@ -372,6 +404,9 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
+        
+    # Make arrays the same size
+    lo, hi = _sameedgeart(lo,hi)
 
     # Calculate modulation index
     pac = np.abs(np.mean(hi * np.exp(1j * lo)))
@@ -383,6 +418,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
         loS = np.roll(lo,np.random.randint(len(lo)))
         pacS[s] = np.abs(np.mean(hi * np.exp(1j * loS)))
         
+    # Return z-score of observed PAC compared to null distribution
     return (pac - np.mean(pacS)) / np.std(pacS)
 
 
@@ -451,6 +487,9 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
+        
+    # Make arrays the same size
+    lo, hi = _sameedgeart(lo,hi)
 
     # Calculate PAC
     pac = np.abs(np.sum(hi * np.exp(1j * lo))) / \
@@ -459,7 +498,7 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
 
 def otc(x, f_hi, f_step, fs=1000,
-        w=7, event_prc=95, t_modsig=None, t_buffer=.01):
+        w=3, event_prc=95, t_modsig=None, t_buffer=.01):
     """
     Calculate the oscillation-triggered coupling measure of phase-amplitude
     coupling from Dvorak, 2014.
@@ -524,7 +563,7 @@ def otc(x, f_hi, f_step, fs=1000,
 
     # Calculate the time-frequency representation
     f0s = np.arange(f_hi[0], f_hi[1], f_step)
-    tf = morletT(x, f0s, w=w, fs=fs)
+    tf = _morletT(x, f0s, w=w, fs=fs)
 
     # Find the high frequency activity event times
     F = len(f0s)
@@ -647,6 +686,44 @@ def _chunk_time(x, samp_buffer=0):
         chunks = np.vstack([chunks, [cur_start, cur_samp]])
 
     return chunks
+    
+
+def _morletT(x, f0s, w=3, fs=1000, s=1):
+    """
+    Calculate the time-frequency representation of the signal 'x' over the
+    frequencies in 'f0s' using morlet wavelets
+
+    Parameters
+    ----------
+    x : array
+        time series
+    f0s : array
+        frequency axis
+    w : float
+        Length of the filter in terms of the number of cycles 
+        of the oscillation whose frequency is the center of the 
+        bandpass filter
+    Fs : float
+        Sampling rate
+    s : float
+        Scaling factor
+
+    Returns
+    -------
+    mwt : 2-D array
+        time-frequency representation of signal x
+    """
+    if w <= 0:
+        raise ValueError(
+            'Number of cycles in a filter must be a positive number.')
+
+    T = len(x)
+    F = len(f0s)
+    mwt = np.zeros([F, T], dtype=complex)
+    for f in range(F):
+        mwt[f] = morletf(x, f0s[f], fs=fs, w=w, s=s)
+
+    return mwt
 
 
 def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
@@ -797,7 +874,10 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Calculate phase time series and amplitude time series
     pha = np.angle(hilbert(xlo))
     amp = np.abs(hilbert(xhi))
-
+    
+    # Make arrays the same size
+    pha, amp = _sameedgeart(pha,amp)
+    
     return pha, amp
 
 

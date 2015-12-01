@@ -184,19 +184,3 @@ def pha_filtzx(x, f_narrow, fs=1000.,
         return pha, peaksB, troughsB
     else:
         return pha
-
-
-def em_lfpow():
-    """
-    EXPERT MODE TOOL:
-    only use the time points of highest low frequency power
-    """
-    return 0
-
-
-def removeedge(x, samp):
-    '''
-    Trim the array x on both sides by the number of samples in 'samp' in order
-    to remove effects of filtering edge artifact
-    '''
-    return x[samp:-samp]

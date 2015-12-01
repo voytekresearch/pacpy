@@ -1,7 +1,7 @@
 import numpy as np
 import pacpy
 import os
-from pacpy.filt import butterf, firf, morletf, rmv_edgeart, morletT
+from pacpy.filt import firfls, morletf, firf
 
 
 def test_firf():
@@ -11,19 +11,17 @@ def test_firf():
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        np.sum(np.abs(firf(data, (13, 30)))), 6421935.78673, atol=10 ** -5)
-    assert len(firf(data, (13, 30))) == len(data)
+        np.sum(np.abs(firf(data, (13, 30)))), 5517466.5857, atol=10 ** -5)
+    
 
-
-def test_butterf():
+def test_firfls():
     """
-    Confirm consistency in butterworth filtering
+    Confirm consistency in FIR least-squares filtering
     """
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        np.sum(np.abs(butterf(data, (13, 30)))), 6339982.78280, atol=10 ** -5)
-    assert len(butterf(data, (13, 30))) == len(data)
+        np.sum(np.abs(firfls(data, (13, 30)))), 6020360.04878, atol=10 ** -5)
 
 
 def test_morletf():
@@ -33,15 +31,4 @@ def test_morletf():
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        np.sum(np.abs(morletf(data, 21.5))), 40661855.060118973, atol=10 ** -5)
-    assert len(morletf(data, 21.5)) == len(data)
-
-def test_morletT():
-    """
-    Confirm that function output size is consistent with inputs
-    """
-    # Load data
-    data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
-    f0s = np.arange(80, 4, 150)
-    tf = morletT(data, f0s)
-    assert np.shape(tf) == (len(f0s), len(data))
+        np.sum(np.abs(morletf(data, 21.5))), 40125678.7918, atol=10 ** -4)
