@@ -151,7 +151,7 @@ def test_mi_canolty():
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        mi_canolty(data, data, (13, 30), (80, 200)), 1.10063, atol=10 ** -5)
+        mi_canolty(data, data, (13, 30), (80, 200)), 19.75624, atol=10 ** -5)
 
     
     # Test that Filterfn = False works as expected
