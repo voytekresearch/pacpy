@@ -7,7 +7,6 @@ import numpy as np
 from scipy.signal import hilbert
 from scipy.stats.mstats import zscore
 from pacpy.filt import firf, morletT
-import statsmodels.api as sm
 
 
 def _x_sanity(lo=None, hi=None):
