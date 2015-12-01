@@ -46,7 +46,7 @@ def firf(x, f_range, fs=1000, w=3):
             'Provide more data or a shorter filter.')
 
     # Perform filtering
-    taps = firwin(Ntaps, f_range/nyq, pass_zero=False)
+    taps = firwin(Ntaps, np.array(f_range)/nyq, pass_zero=False)
     x_filt = filtfilt(taps, [1], x)
 
     if any(np.isnan(x_filt)):
@@ -124,6 +124,10 @@ def firfls(x, f_range, fs=1000, w=3, tw=.15):
     
 def morletf(x, f0, fs=1000, w=3, s=1, M=None, norm='sss'):
     """
+    NOTE: This function is not currently ready to be interfaced with pacpy
+    This is because the frequency input is not a range, which is a big
+    assumption in how the api is currently designed
+    
     Convolve a signal with a complex wavelet
     The real part is the filtered signal
     Taking np.abs() of output gives the analytic amplitude
@@ -152,6 +156,7 @@ def morletf(x, f0, fs=1000, w=3, s=1, M=None, norm='sss'):
     x_trans : array
         Complex time series
     """
+    
     if w <= 0:
         raise ValueError(
             'Number of cycles in a filter must be a positive number.')
@@ -172,8 +177,8 @@ def morletf(x, f0, fs=1000, w=3, s=1, M=None, norm='sss'):
     x_filtI = np.convolve(x, np.imag(morlet_f), mode='same')
     
     # Remove edge artifacts
-    x_filtR = _rmvedgeart(x_filtR, M/2.)
-    x_filtI = _rmvedgeart(x_filtI, M/2.)
+    #x_filtR = _rmvedgeart(x_filtR, M/2.)
+    #x_filtI = _rmvedgeart(x_filtI, M/2.)
 
     return x_filtR + 1j * x_filtI
 
