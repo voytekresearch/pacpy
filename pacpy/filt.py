@@ -54,7 +54,7 @@ def firf(x, f_range, fs=1000, w=3):
             'Filtered signal contains nans. Adjust filter parameters.')
             
     # Remove edge artifacts
-    return _rmvedgeart(x_filt, w, f_range[0], fs)
+    return _rmvedgeart(x_filt, Ntaps)
 
 
 def firfls(x, f_range, fs=1000, w=3, tw=.15):
@@ -119,7 +119,7 @@ def firfls(x, f_range, fs=1000, w=3, tw=.15):
             'Filtered signal contains nans. Adjust filter parameters.')
 
     # Remove edge artifacts
-    return _rmvedgeart(x_filt, w, f_range[0], fs)
+    return _rmvedgeart(x_filt, Ntaps)
     
     
 def morletf(x, f0, fs=1000, w=3, s=1, M=None, norm='sss'):
@@ -172,24 +172,19 @@ def morletf(x, f0, fs=1000, w=3, s=1, M=None, norm='sss'):
     x_filtI = np.convolve(x, np.imag(morlet_f), mode='same')
     
     # Remove edge artifacts
-    x_filtR = _rmvedgeart(x_filtR, w/2., f0, fs)
-    x_filtI = _rmvedgeart(x_filtI, w/2., f0, fs)
+    x_filtR = _rmvedgeart(x_filtR, M/2.)
+    x_filtI = _rmvedgeart(x_filtI, M/2.)
 
     return x_filtR + 1j * x_filtI
 
 
-def _rmvedgeart(x, w, cf, fs):
+def _rmvedgeart(x, N):
     """
     Calculate the number of points to remove for edge artifacts
 
     x : array
         time series to remove edge artifacts from
-    cf : float
-        low cutoff frequency of the bandpass filter
-    w : float
-        number of cycles
-    Fs : float
-        Sampling rate
+    N : int
+        length of filter
     """
-    win = np.floor(w * fs / cf)
-    return x[np.int(win):-np.int(win)]
+    return x[N:-N]
