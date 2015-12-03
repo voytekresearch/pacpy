@@ -1,11 +1,11 @@
 import pytest
 import numpy as np
-import pacpy
-import os
-from pacpy.pac import plv, glm, mi_tort, mi_canolty, ozkurt, otc, _peaktimes, _chunk_time, comodulogram, pa_series, pa_dist
-from pacpy.filt import butterf, firf
 from scipy.signal import hilbert
+import os
 import copy
+import pacpy
+from pacpy.pac import plv, glm, mi_tort, mi_canolty, ozkurt, _sameedgeart, otc, _peaktimes, _chunk_time, comodulogram, pa_series, pa_dist
+from pacpy.filt import firf, firfls
 
 
 def genPAC1(phabias=.5, flo=5, fhi=100, glm_bias=False):
@@ -39,33 +39,29 @@ def genPAC0(flo=5, fhi=100):
     lo = np.sin(t * 2 * np.pi * flo)
     hi = np.sin(t * 2 * np.pi * fhi)
     return lo, hi
-
-
-def ident(x, f, fs):
-    return x
-
+    
 
 def test_plv():
     """
     Test PAC function: PLV.
     1. Confirm consistency of output with example data
-    2. Confirm consistency of output with example data using iir filter
+    2. Confirm consistency of output with example data using firfls filter
     3. Confirm PAC=1 when expected
     4. Confirm PAC=0 when expected
     """
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        plv(data, data, (13, 30), (80, 200)), 0.23778, atol=10 ** -5)
+        plv(data, data, (13, 30), (80, 200)), 0.25114, atol=10 ** -5) 
     assert np.allclose(
-        plv(data, data, (13, 30), (80, 200), filterfn=butterf), 0.24696, atol=10 ** -5)
+        plv(data, data, (13, 30), (80, 200), filterfn=firfls), 0.24715, atol=10 ** -5)
 
     # Test that the PLV function outputs close to 0 and 1 when expected
     lo, hi = genPAC1()
     assert plv(lo, hi, (4, 6), (90, 110)) > 0.99
 
     lo, hi = genPAC0()
-    assert plv(lo, hi, (4, 6), (90, 110)) < 0.05
+    assert plv(lo, hi, (4, 6), (90, 110)) < 0.01
     
     # Test that Filterfn = False works as expected
     datalo = firf(data, (13,30))
@@ -74,6 +70,7 @@ def test_plv():
     datahiamplo = firf(datahiamp, (13,30))
     pha1 = np.angle(hilbert(datalo))
     pha2 = np.angle(hilbert(datahiamplo))
+    pha1, pha2 = _sameedgeart(pha1, pha2)
     assert np.allclose(
         plv(pha1, pha2, (13, 30), (80, 200), filterfn=False),
         plv(data, data, (13, 30), (80, 200)), atol=10 ** -5)
@@ -83,16 +80,13 @@ def test_glm():
     """
     Test PAC function: GLM
     1. Confirm consistency of output with example data
-    2. Confirm consistency of output with example data using iir filter
-    3. Confirm PAC=1 when expected
-    4. Confirm PAC=0 when expected
+    2. Confirm PAC=1 when expected
+    3. Confirm PAC=0 when expected
     """
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        glm(data, data, (13, 30), (80, 200)), 0.03191, atol=10 ** -5)
-    assert np.allclose(
-        glm(data, data, (13, 30), (80, 200), filterfn=butterf), 0.03476, atol=10 ** -5)
+        glm(data, data, (13, 30), (80, 200)), 0.03243, atol=10 ** -5)
 
     # Test that the GLM function outputs close to 0 and 1 when expected
     lo, hi = genPAC1(glm_bias=True)
@@ -100,116 +94,60 @@ def test_glm():
 
     lo, hi = genPAC0()
     assert glm(lo, hi, (4, 6), (90, 110)) < 0.01
-    
-    # Test that Filterfn = False works as expected
-    datalo = firf(data, (13,30))
-    datahi = firf(data, (80,200))
-    pha = np.angle(hilbert(datalo))
-    amp = np.abs(hilbert(datahi))
-    assert np.allclose(
-        glm(pha, amp, (13, 30), (80, 200), filterfn=False),
-        glm(data, data, (13, 30), (80, 200)), atol=10 ** -5)
 
 
 def test_mi_tort():
     """
     Test PAC function: Tort MI
     1. Confirm consistency of output with example data
-    2. Confirm consistency of output with example data using iir filter
-    3. Confirm PAC=1 when expected
-    4. Confirm PAC=0 when expected
+    2. Confirm PAC=1 when expected
+    3. Confirm PAC=0 when expected
     """
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        mi_tort(data, data, (13, 30), (80, 200)), 0.00366, atol=10 ** -5)
-    assert np.allclose(mi_tort(
-        data, data, (13, 30), (80, 200), filterfn=butterf), 0.00429, atol=10 ** -5)
+        mi_tort(data, data, (13, 30), (80, 200)), 0.00363, atol=10 ** -5)
 
     # Test that the Tort MI function outputs close to 0 and 1 when expected
     lo, hi = genPAC1(phabias=.2, fhi=300)
-    assert mi_tort(lo, hi, (4, 6), (100, 400)) > 0.8
+    assert mi_tort(lo, hi, (4, 6), (100, 400)) > 0.7
 
     lo, hi = genPAC0()
-    assert mi_tort(lo, hi, (4, 6), (90, 110)) < 10 ** -5
-    
-    # Test that Filterfn = False works as expected
-    datalo = firf(data, (13,30))
-    datahi = firf(data, (80,200))
-    pha = np.angle(hilbert(datalo))
-    amp = np.abs(hilbert(datahi))
-    assert np.allclose(
-        mi_tort(pha, amp, (13, 30), (80, 200), filterfn=False),
-        mi_tort(data, data, (13, 30), (80, 200)), atol=10 ** -5)
+    assert mi_tort(lo, hi, (4, 6), (100, 400)) < 10 ** -5
 
 
 def test_mi_canolty():
     """
     Test PAC function: Canolty MI
     1. Confirm consistency of output with example data
-    2. Confirm consistency of output with example data using iir filter
-    3. Confirm PAC=1 when expected
-    4. Confirm PAC=0 when expected
     """
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        mi_canolty(data, data, (13, 30), (80, 200)), 1.10063, atol=10 ** -5)
-    assert np.allclose(mi_canolty(
-        data, data, (13, 30), (80, 200), filterfn=butterf), 1.14300, atol=10 ** -5)
-
-    # Test that the Canolty MI function outputs close to 0 and 1 when expected
-    lo, hi = genPAC1(phabias=.2, fhi=300)
-    hif = firf(hi, (100, 400))
-    amp = np.abs(hilbert(hif))
-    assert mi_canolty(lo, hi, (4, 6), (100, 400)) / np.mean(amp) > 0.99
-
-    lo, hi = genPAC0()
-    assert mi_canolty(lo, hi, (4, 6), (90, 110)) < 0.001
-    
-    # Test that Filterfn = False works as expected
-    datalo = firf(data, (13,30))
-    datahi = firf(data, (80,200))
-    pha = np.angle(hilbert(datalo))
-    amp = np.abs(hilbert(datahi))
-    assert np.allclose(
-        mi_canolty(pha, amp, (13, 30), (80, 200), filterfn=False),
-        mi_canolty(data, data, (13, 30), (80, 200)), atol=10 ** -5)
+        mi_canolty(data, data, (13, 30), (80, 200)), 22.08946, atol=10 ** -5)
 
 
 def test_ozkurt():
     """
     Test PAC function: Ozkurt
     1. Confirm consistency of output with example data
-    2. Confirm consistency of output with example data using iir filter
-    3. Confirm PAC=1 when expected
-    4. Confirm PAC=0 when expected
+    2. Confirm PAC=1 when expected
+    3. Confirm PAC=0 when expected
     """
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        ozkurt(data, data, (13, 30), (80, 200)), 0.07548, atol=10 ** -5)
-    assert np.allclose(
-        ozkurt(data, data, (13, 30), (80, 200), filterfn=butterf), 0.07555, atol=10 ** -5)
+        ozkurt(data, data, (13, 30), (80, 200)), 0.07658, atol=10 ** -5)
 
     # Test that the Ozkurt PAC function outputs close to 0 and 1 when expected
     lo, hi = genPAC1(phabias=.2, fhi=300)
     hif = firf(hi, (100, 400))
     amp = np.abs(hilbert(hif))
     weight = (np.sqrt(len(amp)) * np.sqrt(np.sum(amp ** 2))) / np.sum(amp)
-    assert ozkurt(lo, hi, (4, 6), (100, 400)) * weight > 0.99
+    assert ozkurt(lo, hi, (4, 6), (100, 400)) * weight > 0.98
 
     lo, hi = genPAC0()
-    assert ozkurt(lo, hi, (4, 6), (90, 110)) < 0.001
-    
-    # Test that Filterfn = False works as expected
-    datalo = firf(data, (13,30))
-    datahi = firf(data, (80,200))
-    pha = np.angle(hilbert(datalo))
-    amp = np.abs(hilbert(datahi))
-    assert np.allclose(
-        ozkurt(pha, amp, (13, 30), (80, 200), filterfn=False),
-        ozkurt(data, data, (13, 30), (80, 200)), atol=10 ** -5)
+    assert ozkurt(lo, hi, (4, 6), (100, 400)) < 0.01
 
 
 def test_otc():
@@ -226,7 +164,7 @@ def test_otc():
     f_step = 4
     pac, tf, a_events, mod_sig = otc(
         data, f_hi, f_step, fs=fs, t_modsig=t_modsig)
-    assert np.allclose(pac, 220.32563, atol=10 ** -5)
+    assert np.allclose(pac, 235.02888, atol=10 ** -5)
 
     # Confirm correct shapes in outputs
     assert np.shape(tf) == ((f_hi[1] - f_hi[0]) / f_step, len(data))
@@ -269,7 +207,7 @@ def test_comod():
     dp = 5
     da = 50
     a = comodulogram(data, data, p_range, a_range, dp, da)
-    assert np.allclose(a[0][0], 0.00287, atol=10 ** -5)
+    assert np.allclose(a[0][0], 0.00315, atol=10 ** -5)
     assert np.shape(a) == (len(np.arange(p_range[0], p_range[1], dp)), len(
         np.arange(a_range[0], a_range[1], da)))
 
@@ -283,12 +221,8 @@ def test_paseries():
 
     # Confirm returns correct size
     p, a = pa_series(data, data, (13, 30), (80, 200))
-    assert np.shape(p) == np.shape(data)
-    assert np.shape(a) == np.shape(data)
-
-    # Confirm consistency
-    assert np.allclose(np.mean(a), 11.43970, atol=10 ** -5)
-    assert np.allclose(p[0], 1.57119, atol=10 ** -5)
+    assert np.allclose(np.mean(a), 9.41637, atol=10 ** -5)
+    assert np.allclose(p[0], -1.83601, atol=10 ** -5)
 
 
 def test_padist():
@@ -307,7 +241,7 @@ def test_padist():
 
     # Confirm consistency
     _, dist = pa_dist(pha, amp, Nbins=10)
-    assert np.allclose(dist[0], 12.13961, atol=10 ** -5)
+    assert np.allclose(dist[0], 9.90227, atol=10 ** -5)
 
 
 def test_raiseinputerrors():
