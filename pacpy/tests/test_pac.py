@@ -4,7 +4,7 @@ from scipy.signal import hilbert
 import os
 import copy
 import pacpy
-from pacpy.pac import plv, glm, mi_tort, mi_canolty, ozkurt, _sameedgeart, otc, _peaktimes, _chunk_time, comodulogram, pa_series, pa_dist
+from pacpy.pac import plv, glm, mi_tort, mi_canolty, ozkurt, _trim_edges, otc, _peaktimes, _chunk_time, comodulogram, pa_series, pa_dist
 from pacpy.filt import firf, firfls
 
 
@@ -70,7 +70,7 @@ def test_plv():
     datahiamplo = firf(datahiamp, (13, 30))
     pha1 = np.angle(hilbert(datalo))
     pha2 = np.angle(hilbert(datahiamplo))
-    pha1, pha2 = _sameedgeart(pha1, pha2)
+    pha1, pha2 = _trim_edges(pha1, pha2)
     assert np.allclose(
         plv(pha1, pha2, (13, 30), (80, 200), filterfn=False),
         plv(data, data, (13, 30), (80, 200)), atol=10 ** -5)

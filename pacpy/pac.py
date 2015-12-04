@@ -108,7 +108,7 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         hi = np.angle(hilbert(hi))
 
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo, hi)
+    lo, hi = _trim_edges(lo, hi)
 
     # Calculate PLV
     pac = np.abs(np.mean(np.exp(1j * (lo - hi))))
@@ -116,30 +116,29 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     return pac
 
 
-def _sameedgeart(lo, hi):
+def _trim_edges(lo, hi):
     """
     Remove extra edge artifact from the signal with the shorter filter
     so that its time series is identical to that of the filtered signal
     with a longer filter.
     """
-    if len(lo) < len(hi):
+    
+    if len(lo) == len(hi):
+        return lo, hi  # Die early if there's nothing to do.
+    elif len(lo) < len(hi):
         Ndiff = len(hi) - len(lo)
         if Ndiff % 2 != 0:
             raise ValueError(
                 'Difference in filtered signal lengths should be even')
         hi = hi[np.int(Ndiff / 2):np.int(-Ndiff / 2)]
-        return lo, hi
-
-    elif len(lo) > len(hi):
+    else:
         Ndiff = len(lo) - len(hi)
         if Ndiff % 2 != 0:
             raise ValueError(
-                'Difference in filtered signal lengths should be even')
+                'Difference in filtered signal lengths should be even')                
         lo = lo[np.int(Ndiff / 2):np.int(-Ndiff / 2)]
-        return lo, hi
 
-    else:
-        return lo, hi
+    return lo, hi
 
 
 def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
@@ -217,7 +216,7 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
         lo = np.angle(hilbert(lo))
 
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo, hi)
+    lo, hi = _trim_edges(lo, hi)
 
     # Convert the phase time series from radians to degrees
     phadeg = np.degrees(lo)
@@ -321,7 +320,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         lo = np.angle(hilbert(lo))
 
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo, hi)
+    lo, hi = _trim_edges(lo, hi)
 
     # First prepare GLM
     y = hi
@@ -408,7 +407,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
         lo = np.angle(hilbert(lo))
 
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo, hi)
+    lo, hi = _trim_edges(lo, hi)
 
     # Calculate modulation index
     pac = np.abs(np.mean(hi * np.exp(1j * lo)))
@@ -491,7 +490,7 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         lo = np.angle(hilbert(lo))
 
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo, hi)
+    lo, hi = _trim_edges(lo, hi)
 
     # Calculate PAC
     pac = np.abs(np.sum(hi * np.exp(1j * lo))) / \
@@ -878,7 +877,7 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     amp = np.abs(hilbert(xhi))
 
     # Make arrays the same size
-    pha, amp = _sameedgeart(pha, amp)
+    pha, amp = _trim_edges(pha, amp)
 
     return pha, amp
 
