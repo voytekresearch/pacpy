@@ -3,6 +3,10 @@
 
 A module to calculate phase-amplitude coupling in Python.
 
+## Demo
+
+A [Binder](http://mybinder.org) demo, complete with simulated data, can be found [here](https://github.com/srcole/pacpybinder).
+
 ## Install
 
 	pip install pacpy
