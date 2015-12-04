@@ -1,8 +1,6 @@
 from __future__ import division
 import numpy as np
 import math
-from pacpy.pac import _x_sanity, _range_sanity
-from pacpy.filt import firf
 
 
 def fasthilbert(x, axis=-1):

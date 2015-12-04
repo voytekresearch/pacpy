@@ -83,7 +83,7 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
     >>> plv(lo, hi, (4,8), (80,150)) # Calculate PAC
-    0.998263840824846
+    0.99863308613553081
     """
 
     # Arg check
@@ -189,7 +189,7 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
     >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
     >>> mi_tort(lo, hi, (4,8), (80,150)) # Calculate PAC
-    0.34148127875
+    0.34898478944110811
     """
 
     # Arg check
@@ -297,7 +297,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
     >>> glm(lo, hi, (4,8), (80,150)) # Calculate PAC
-    0.67066033413
+    0.69090396896138917
     """
 
     # Arg check
@@ -384,7 +384,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
     >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
     >>> mi_canolty(lo, hi, (4,8), (80,150)) # Calculate PAC
-    -0.4431037556749353
+    1.1605177063713188
     """
 
     # Arg check
@@ -467,7 +467,7 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     >>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
     >>> ozkurt(lo, hi, (4,8), (80,150)) # Calculate PAC
-    0.48033603055
+    0.48564417921240238
     """
 
     # Arg check
@@ -548,7 +548,7 @@ def otc(x, f_hi, f_step, fs=1000,
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
     >>> pac, _, _, _ = otc(lo + hi, (80,150), 4) # Calculate PAC
     >>> print pac
-    1.96793361799
+    2.1324570402314196
     """
 
     # Arg check
@@ -778,8 +778,8 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
     >>> comod = comodulogram(lo, hi, (5,25), (75,175), 10, 50) # Calculate PAC
     >>> print comod
-    [[ 0.33562658  0.3156674 ]
-     [ 0.17943107  0.11714463]]
+    [[ 0.32708628  0.32188585]
+     [ 0.3295994   0.32439953]]
     """
 
     # Arg check
@@ -856,7 +856,7 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     >>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
     >>> pha, amp = pa_series(lo, hi, (4,8), (80,150))
     >>> print pha
-    [-1.57079633 -1.53192376 -1.49301802 ..., -1.64840672 -1.6095709 -1.57079634]
+    [ 1.57079633  1.60849544  1.64619455 ...,  1.45769899  1.4953981  1.53309721]
     """
 
     # Arg check
@@ -915,9 +915,9 @@ def pa_dist(pha, amp, Nbins=10):
     >>> pha, amp = pa_series(lo, hi, (4,8), (80,150))
     >>> phase_bins, dist = pa_dist(pha, amp)
     >>> print dist
-   [  8.50785050e-01   9.51196710e-01   5.07891376e-01   3.44834587e-02
-   2.59210539e-03   3.95967672e-04   3.49264554e-04   5.64576664e-04
-   1.19064631e-02   1.57014062e-01]
+    [  7.21154110e-01   8.04347122e-01   4.49207087e-01   2.08747058e-02
+       8.03854240e-05   3.45166617e-05   3.45607343e-05   3.51091029e-05
+       7.73644631e-04   1.63514941e-01]
     """
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
         raise ValueError(

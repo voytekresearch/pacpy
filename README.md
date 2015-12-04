@@ -33,4 +33,4 @@ An example of calculating PAC from two simulated voltage signals using the phase
 		>>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
 		>>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
 		>>> plv(lo, hi, (4,8), (80,150)) # Calculate PAC
-		0.998263840824846
+		0.99863308613553081
