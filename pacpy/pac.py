@@ -106,17 +106,17 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
         lo = np.angle(hilbert(lo))
         hi = np.angle(hilbert(hi))
-        
+
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo,hi)
-        
+    lo, hi = _sameedgeart(lo, hi)
+
     # Calculate PLV
-    pac = np.abs(np.sum(np.exp(1j * (lo - hi)))) / len(lo)
+    pac = np.abs(np.mean(np.exp(1j * (lo - hi))))
 
     return pac
-    
-    
-def _sameedgeart(lo,hi):
+
+
+def _sameedgeart(lo, hi):
     """
     Remove extra edge artifact from the signal with the shorter filter
     so that its time series is identical to that of the filtered signal
@@ -125,17 +125,19 @@ def _sameedgeart(lo,hi):
     if len(lo) < len(hi):
         Ndiff = len(hi) - len(lo)
         if Ndiff % 2 != 0:
-            raise ValueError('Difference in filtered signal lengths should be even')
-        hi = hi[np.int(Ndiff/2):np.int(-Ndiff/2)]
+            raise ValueError(
+                'Difference in filtered signal lengths should be even')
+        hi = hi[np.int(Ndiff / 2):np.int(-Ndiff / 2)]
         return lo, hi
-        
+
     elif len(lo) > len(hi):
         Ndiff = len(lo) - len(hi)
         if Ndiff % 2 != 0:
-            raise ValueError('Difference in filtered signal lengths should be even')
-        lo = lo[np.int(Ndiff/2):np.int(-Ndiff/2)]
+            raise ValueError(
+                'Difference in filtered signal lengths should be even')
+        lo = lo[np.int(Ndiff / 2):np.int(-Ndiff / 2)]
         return lo, hi
-        
+
     else:
         return lo, hi
 
@@ -213,10 +215,10 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
-        
+
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo,hi)
-        
+    lo, hi = _sameedgeart(lo, hi)
+
     # Convert the phase time series from radians to degrees
     phadeg = np.degrees(lo)
 
@@ -317,10 +319,10 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
-        
+
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo,hi)
-        
+    lo, hi = _sameedgeart(lo, hi)
+
     # First prepare GLM
     y = hi
     X_pre = np.vstack((np.cos(lo), np.sin(lo)))
@@ -336,7 +338,7 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
 
 def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
-               nSurr=100):
+               n_surr=100):
     """
     Calculate PAC using the modulation index (MI) method defined in Canolty,
     2006
@@ -365,7 +367,7 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
         bandpass of the original signal.
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
-    nSurr : int
+    n_surr : int
         Number of surrogate tests to run to calculate normalized MI
 
     Returns
@@ -404,20 +406,20 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
-        
+
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo,hi)
+    lo, hi = _sameedgeart(lo, hi)
 
     # Calculate modulation index
     pac = np.abs(np.mean(hi * np.exp(1j * lo)))
-    
+
     # Calculate surrogate MIs
-    pacS = np.zeros(nSurr)
+    pacS = np.zeros(n_surr)
     np.random.seed(0)
-    for s in range(nSurr):
-        loS = np.roll(lo,np.random.randint(len(lo)))
+    for s in range(n_surr):
+        loS = np.roll(lo, np.random.randint(len(lo)))
         pacS[s] = np.abs(np.mean(hi * np.exp(1j * loS)))
-        
+
     # Return z-score of observed PAC compared to null distribution
     return (pac - np.mean(pacS)) / np.std(pacS)
 
@@ -487,9 +489,9 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
         hi = np.abs(hilbert(hi))
         lo = np.angle(hilbert(lo))
-        
+
     # Make arrays the same size
-    lo, hi = _sameedgeart(lo,hi)
+    lo, hi = _sameedgeart(lo, hi)
 
     # Calculate PAC
     pac = np.abs(np.sum(hi * np.exp(1j * lo))) / \
@@ -686,7 +688,7 @@ def _chunk_time(x, samp_buffer=0):
         chunks = np.vstack([chunks, [cur_start, cur_samp]])
 
     return chunks
-    
+
 
 def _morletT(x, f0s, w=3, fs=1000, s=1):
     """
@@ -874,10 +876,10 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     # Calculate phase time series and amplitude time series
     pha = np.angle(hilbert(xlo))
     amp = np.abs(hilbert(xhi))
-    
+
     # Make arrays the same size
-    pha, amp = _sameedgeart(pha,amp)
-    
+    pha, amp = _sameedgeart(pha, amp)
+
     return pha, amp
 
 

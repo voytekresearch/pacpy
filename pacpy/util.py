@@ -27,7 +27,6 @@ def pha_filtzx(x, f_narrow, fs=1000.,
                Fpeak=True, Ftrough=True, Fzerocross=True,
                filterfn=None, filter_kwargs=None, return_pt=False):
     """
-
     Calculate the phase time series of 'x' by identifying zerocrossings
     in the filtered signal and updating peaks and troughs to be the argmax
     and argmin in their respective regions.

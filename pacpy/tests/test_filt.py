@@ -12,7 +12,7 @@ def test_firf():
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
         np.sum(np.abs(firf(data, (13, 30)))), 5517466.5857, atol=10 ** -5)
-    
+
 
 def test_firfls():
     """

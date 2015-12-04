@@ -39,7 +39,7 @@ def genPAC0(flo=5, fhi=100):
     lo = np.sin(t * 2 * np.pi * flo)
     hi = np.sin(t * 2 * np.pi * fhi)
     return lo, hi
-    
+
 
 def test_plv():
     """
@@ -52,7 +52,7 @@ def test_plv():
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
     assert np.allclose(
-        plv(data, data, (13, 30), (80, 200)), 0.25114, atol=10 ** -5) 
+        plv(data, data, (13, 30), (80, 200)), 0.25114, atol=10 ** -5)
     assert np.allclose(
         plv(data, data, (13, 30), (80, 200), filterfn=firfls), 0.24715, atol=10 ** -5)
 
@@ -62,19 +62,19 @@ def test_plv():
 
     lo, hi = genPAC0()
     assert plv(lo, hi, (4, 6), (90, 110)) < 0.01
-    
+
     # Test that Filterfn = False works as expected
-    datalo = firf(data, (13,30))
-    datahi = firf(data, (80,200))
+    datalo = firf(data, (13, 30))
+    datahi = firf(data, (80, 200))
     datahiamp = np.abs(hilbert(datahi))
-    datahiamplo = firf(datahiamp, (13,30))
+    datahiamplo = firf(datahiamp, (13, 30))
     pha1 = np.angle(hilbert(datalo))
     pha2 = np.angle(hilbert(datahiamplo))
     pha1, pha2 = _sameedgeart(pha1, pha2)
     assert np.allclose(
         plv(pha1, pha2, (13, 30), (80, 200), filterfn=False),
         plv(data, data, (13, 30), (80, 200)), atol=10 ** -5)
-    
+
 
 def test_glm():
     """
