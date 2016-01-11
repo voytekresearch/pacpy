@@ -192,4 +192,5 @@ def _remove_edge(x, N):
     N : int
         length of filter
     """
+    N = int(N)
     return x[N:-N]
