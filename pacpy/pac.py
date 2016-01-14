@@ -789,7 +789,7 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None,
 
         # if high frequency should be returned as phase of envelope:
         if hi_phase == True:
-            hi = filterfn(amp, f_lo, fs, **filter_kwargs)
+            hi = filterfn(hi, f_lo, fs, **filter_kwargs)
             hi = np.angle(hilbert(hi))
 
         # Make arrays the same size
