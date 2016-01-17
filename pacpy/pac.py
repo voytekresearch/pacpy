@@ -744,15 +744,16 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None,
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
     hi_phase : boolean
-        Whether to calculate phase of envelope for the high frequency
-        time-series instead of amplitude (default = False)
+        Whether to calculate phase of low-frequency component of the high frequency
+        time-series amplitude instead of amplitude of the high frequency time-series
+        (default = False)
 
     Returns
     -------
     pha : array-like, 1d
         Time series of phase
     amp : array-like, 1d
-        Time series of amplitude (or phase of envelope if hi_phase=True)
+        Time series of amplitude (or phase of low frequency component of amplitude if hi_phase=True)
 
     Usage
     -----
@@ -787,7 +788,8 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None,
         lo = np.angle(hilbert(lo))
         hi = np.abs(hilbert(hi))
 
-        # if high frequency should be returned as phase of envelope:
+        # if high frequency should be returned as phase of low-frequency
+        # component of the amplitude:
         if hi_phase == True:
             hi = filterfn(hi, f_lo, fs, **filter_kwargs)
             hi = np.angle(hilbert(hi))
