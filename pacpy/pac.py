@@ -86,29 +86,8 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     0.99863308613553081
     """
 
-    # Arg check
-    _x_sanity(lo, hi)
-
-    # Filter setup
-    if filterfn is None:
-        filterfn = firf
-
-    if filter_kwargs is None:
-        filter_kwargs = {}
-
-    # Filter then hilbert
-    if filterfn is not False:
-        _range_sanity(f_lo, f_hi)
-        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-        amp = np.abs(hilbert(hi))
-        hi = filterfn(amp, f_lo, fs, **filter_kwargs)
-
-        lo = np.angle(hilbert(lo))
-        hi = np.angle(hilbert(hi))
-
-    # Make arrays the same size
-    lo, hi = _trim_edges(lo, hi)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
+                       filter_kwargs=filter_kwargs, hi_phase=True)
 
     # Calculate PLV
     pac = np.abs(np.mean(np.exp(1j * (lo - hi))))
@@ -193,30 +172,13 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
     """
 
     # Arg check
-    _x_sanity(lo, hi)
     if np.logical_or(Nbins < 2, Nbins != int(Nbins)):
         raise ValueError(
             'Number of bins in the low frequency oscillation cycle'
             'must be an integer >1.')
 
-    # Filter setup
-    if filterfn is None:
-        filterfn = firf
-
-    if filter_kwargs is None:
-        filter_kwargs = {}
-
-    # Filter then hilbert
-    if filterfn is not False:
-        _range_sanity(f_lo, f_hi)
-        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-
-        hi = np.abs(hilbert(hi))
-        lo = np.angle(hilbert(lo))
-
-    # Make arrays the same size
-    lo, hi = _trim_edges(lo, hi)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
+                   filter_kwargs=filter_kwargs)
 
     # Convert the phase time series from radians to degrees
     phadeg = np.degrees(lo)
@@ -300,27 +262,8 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     0.69090396896138917
     """
 
-    # Arg check
-    _x_sanity(lo, hi)
-
-    # Filter series
-    if filterfn is None:
-        filterfn = firf
-
-    if filter_kwargs is None:
-        filter_kwargs = {}
-
-    # Filter then hilbert
-    if filterfn is not False:
-        _range_sanity(f_lo, f_hi)
-        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-
-        hi = np.abs(hilbert(hi))
-        lo = np.angle(hilbert(lo))
-
-    # Make arrays the same size
-    lo, hi = _trim_edges(lo, hi)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
+                       filter_kwargs=filter_kwargs)
 
     # First prepare GLM
     y = hi
@@ -387,27 +330,8 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
     1.1605177063713188
     """
 
-    # Arg check
-    _x_sanity(lo, hi)
-
-    # Filter series
-    if filterfn is None:
-        filterfn = firf
-
-    if filter_kwargs is None:
-        filter_kwargs = {}
-
-    # Filter then hilbert
-    if filterfn is not False:
-        _range_sanity(f_lo, f_hi)
-        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-
-        hi = np.abs(hilbert(hi))
-        lo = np.angle(hilbert(lo))
-
-    # Make arrays the same size
-    lo, hi = _trim_edges(lo, hi)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
+                       filter_kwargs=filter_kwargs)
 
     # Calculate modulation index
     pac = np.abs(np.mean(hi * np.exp(1j * lo)))
@@ -470,27 +394,8 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     0.48564417921240238
     """
 
-    # Arg check
-    _x_sanity(lo, hi)
-
-    # Filter series
-    if filterfn is None:
-        filterfn = firf
-
-    if filter_kwargs is None:
-        filter_kwargs = {}
-
-    # Filter then hilbert
-    if filterfn is not False:
-        _range_sanity(f_lo, f_hi)
-        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
-
-        hi = np.abs(hilbert(hi))
-        lo = np.angle(hilbert(lo))
-
-    # Make arrays the same size
-    lo, hi = _trim_edges(lo, hi)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
+                       filter_kwargs=filter_kwargs)
 
     # Calculate PAC
     pac = np.abs(np.sum(hi * np.exp(1j * lo))) / \
@@ -817,7 +722,8 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     return comod
 
 
-def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
+def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None,
+              filter_kwargs=None, hi_phase=False):
     """
     Calculate the phase and amplitude time series
 
@@ -837,13 +743,17 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
+    hi_phase : boolean
+        Whether to calculate phase of low-frequency component of the high frequency
+        time-series amplitude instead of amplitude of the high frequency time-series
+        (default = False)
 
     Returns
     -------
     pha : array-like, 1d
         Time series of phase
     amp : array-like, 1d
-        Time series of amplitude
+        Time series of amplitude (or phase of low frequency component of amplitude if hi_phase=True)
 
     Usage
     -----
@@ -861,25 +771,33 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
 
     # Arg check
     _x_sanity(lo, hi)
-    _range_sanity(f_lo, f_hi)
 
     # Filter setup
     if filterfn is None:
         filterfn = firf
+
+    if filter_kwargs is None:
         filter_kwargs = {}
 
-    # Filter
-    xlo = filterfn(lo, f_lo, fs, **filter_kwargs)
-    xhi = filterfn(hi, f_hi, fs, **filter_kwargs)
+    # Filter then hilbert
+    if filterfn is not False:
+        _range_sanity(f_lo, f_hi)
+        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
+        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
 
-    # Calculate phase time series and amplitude time series
-    pha = np.angle(hilbert(xlo))
-    amp = np.abs(hilbert(xhi))
+        lo = np.angle(hilbert(lo))
+        hi = np.abs(hilbert(hi))
 
-    # Make arrays the same size
-    pha, amp = _trim_edges(pha, amp)
+        # if high frequency should be returned as phase of low-frequency
+        # component of the amplitude:
+        if hi_phase == True:
+            hi = filterfn(hi, f_lo, fs, **filter_kwargs)
+            hi = np.angle(hilbert(hi))
 
-    return pha, amp
+        # Make arrays the same size
+        lo, hi = _trim_edges(lo, hi)
+
+    return lo, hi
 
 
 def pa_dist(pha, amp, Nbins=10):
