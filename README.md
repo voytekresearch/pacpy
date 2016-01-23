@@ -29,12 +29,18 @@ The wrapper for MATLAB can be found at, https://github.com/voytekresearch/pacmat
 
 An example of calculating PAC from two simulated voltage signals using the phase-locking value (PLV) method:
 
-        >>> import numpy as np
-		>>> from scipy.signal import hilbert
-		>>> from pacpy.pac import plv
-		>>> t = np.arange(0, 10, .001) # Define time array
-		>>> lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
-		>>> hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
-		>>> hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
-		>>> plv(lo, hi, (4,8), (80,150)) # Calculate PAC
-		0.99863308613553081
+```python
+import numpy as np
+from scipy.signal import hilbert
+from pacpy.pac import plv
+
+t = np.arange(0, 10, .001) # Define time array
+lo = np.sin(t * 2 * np.pi * 6) # Create low frequency carrier
+hi = np.sin(t * 2 * np.pi * 100) # Create modulated oscillation
+hi[np.angle(hilbert(lo)) > -np.pi*.5] = 0 # Clip to 1/4 of cycle
+
+plv(lo, hi, (4,8), (80,150)) # Calculate PAC
+```
+```
+0.99863308613553081
+```
