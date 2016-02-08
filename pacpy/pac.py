@@ -339,9 +339,11 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
     # Calculate surrogate MIs
     pacS = np.zeros(n_surr)
     np.random.seed(0)
+    
+    loj = np.exp(1j * lo)
     for s in range(n_surr):
-        loS = np.roll(lo, np.random.randint(len(lo)))
-        pacS[s] = np.abs(np.mean(hi * np.exp(1j * loS)))
+        loS = np.roll(loj, np.random.randint(len(lo)))
+        pacS[s] = np.abs(np.mean(hi * loS))
 
     # Return z-score of observed PAC compared to null distribution
     return (pac - np.mean(pacS)) / np.std(pacS)
