@@ -338,7 +338,6 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
 
     # Calculate surrogate MIs
     pacS = np.zeros(n_surr)
-    np.random.seed(0)
     
     loj = np.exp(1j * lo)
     for s in range(n_surr):
