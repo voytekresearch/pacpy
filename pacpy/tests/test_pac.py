@@ -123,6 +123,7 @@ def test_mi_canolty():
     """
     # Load data
     data = np.load(os.path.dirname(pacpy.__file__) + '/tests/exampledata.npy')
+    np.random.seed(0)
     assert np.allclose(
         mi_canolty(data, data, (13, 30), (80, 200)), 22.08946, atol=10 ** -5)
 
