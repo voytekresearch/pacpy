@@ -1,7 +1,6 @@
 from __future__ import division
 import numpy as np
 
-from scipy.signal import filtfilt
 from scipy.signal import firwin2, firwin
 from scipy.signal import morlet
 
@@ -47,7 +46,7 @@ def firf(x, f_range, fs=1000, w=3):
 
     # Perform filtering
     taps = firwin(Ntaps, np.array(f_range) / nyq, pass_zero=False)
-    x_filt = filtfilt(taps, [1], x)
+    x_filt = np.convolve(x, taps, 'same')
 
     if any(np.isnan(x_filt)):
         raise RuntimeError(
