@@ -1,4 +1,5 @@
 numpy == 1.9.2
 pytest == 2.7.2
+libgfortran == 1.0.0
 scipy == 0.16.0
 statsmodels == 0.6.1
