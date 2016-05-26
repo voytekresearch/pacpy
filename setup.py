@@ -28,7 +28,7 @@ setup(
     ],
     keywords='neuroscience spectral phase-amplitude',
     packages=find_packages(),
-    install_requires=['numpy>=1.8.0','scipy>=0.15.1'],
+    install_requires=['numpy>=1.9.0','scipy>=0.16.0'],
     extras_require={'test': ['pytest']},
     package_data={
         '': ['tests/*.npy', 'tests/test_*py'],
