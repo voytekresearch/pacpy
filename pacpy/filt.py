@@ -6,7 +6,7 @@ from scipy.signal import firwin2, firwin
 from scipy.signal import morlet
 
 
-def firf(x, f_range, fs=1000, w=3):
+def firf(x, f_range, fs=1000, w=3, rmvedge = True):
     """
     Filter signal with an FIR filter
     *Like fir1 in MATLAB
@@ -54,7 +54,10 @@ def firf(x, f_range, fs=1000, w=3):
             'Filtered signal contains nans. Adjust filter parameters.')
 
     # Remove edge artifacts
-    return _remove_edge(x_filt, Ntaps)
+    if rmvedge:
+        return _remove_edge(x_filt, Ntaps)
+    else:
+        return x_filt
 
 
 def firfls(x, f_range, fs=1000, w=3, tw=.15):
