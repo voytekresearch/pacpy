@@ -38,7 +38,8 @@ def _range_sanity(f_lo=None, f_hi=None):
             raise ValueError("Elements in f_hi must be > 0")
 
 
-def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
+def plv(lo, hi, f_lo, f_hi, fs=1000, w_lo=3, w_hi=3,
+        filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the phase-locking value (PLV) method from prefiltered
     signals
@@ -53,6 +54,10 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The low frequency filtering range
     f_hi : (low, high), Hz
         The low frequency filtering range
+    w_lo : float
+        Number of cycles for the filter order of the low band-pass filter
+    w_hi : float
+        Number of cycles for the filter order of the low band-pass filter
     fs : float
         The sampling rate (default = 1000Hz)
     filterfn : function, False
@@ -86,8 +91,8 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     0.99863308613553081
     """
 
-    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
-                       filter_kwargs=filter_kwargs, hi_phase=True)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, w_lo=w_lo, w_hi=w_hi,
+                       filterfn=filterfn, filter_kwargs=filter_kwargs, hi_phase=True)
 
     # Calculate PLV
     pac = np.abs(np.mean(np.exp(1j * (lo - hi))))
@@ -120,8 +125,8 @@ def _trim_edges(lo, hi):
     return lo, hi
 
 
-def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
-            filter_kwargs=None):
+def mi_tort(lo, hi, f_lo, f_hi, fs=1000, w_lo=3, w_hi=3,
+            Nbins=20, filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the modulation index method from prefiltered
     signals
@@ -136,6 +141,10 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
         The low frequency filtering ranges
     f_hi : (low, high), Hz
         The low frequency filtering range
+    w_lo : float
+        Number of cycles for the filter order of the low band-pass filter
+    w_hi : float
+        Number of cycles for the filter order of the low band-pass filter
     fs : float
         The sampling rate (default = 1000Hz)
     filterfn : functional
@@ -177,8 +186,8 @@ def mi_tort(lo, hi, f_lo, f_hi, fs=1000, Nbins=20, filterfn=None,
             'Number of bins in the low frequency oscillation cycle'
             'must be an integer >1.')
 
-    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
-                   filter_kwargs=filter_kwargs)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, w_lo=w_lo, w_hi=w_hi,
+                       filterfn=filterfn, filter_kwargs=filter_kwargs)
 
     # Convert the phase time series from radians to degrees
     phadeg = np.degrees(lo)
@@ -215,7 +224,8 @@ def _ols(y, X):
     return y_hat, beta_hat
 
 
-def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
+def glm(lo, hi, f_lo, f_hi, fs=1000, w_lo=3, w_hi=3,
+        filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the generalized linear model (GLM) method
 
@@ -231,6 +241,10 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The low frequency filtering range
     fs : float
         The sampling rate (default = 1000Hz)
+    w_lo : float
+        Number of cycles for the filter order of the low band-pass filter
+    w_hi : float
+        Number of cycles for the filter order of the low band-pass filter
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
 
@@ -262,8 +276,8 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     0.69090396896138917
     """
 
-    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
-                       filter_kwargs=filter_kwargs)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, w_lo=w_lo, w_hi=w_hi,
+                       filterfn=filterfn, filter_kwargs=filter_kwargs)
 
     # First prepare GLM
     y = hi
@@ -279,8 +293,8 @@ def glm(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     return pac
 
 
-def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
-               n_surr=100):
+def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, w_lo=3, w_hi=3,
+               filterfn=None, filter_kwargs=None, n_surr=100):
     """
     Calculate PAC using the modulation index (MI) method defined in Canolty,
     2006
@@ -297,6 +311,10 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
         The low frequency filtering range
     fs : float
         The sampling rate (default = 1000Hz)
+    w_lo : float
+        Number of cycles for the filter order of the low band-pass filter
+    w_hi : float
+        Number of cycles for the filter order of the low band-pass filter
     filterfn : functional
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
 
@@ -330,8 +348,8 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
     1.1605177063713188
     """
 
-    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
-                       filter_kwargs=filter_kwargs)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, w_lo=w_lo, w_hi=w_hi,
+                       filterfn=filterfn, filter_kwargs=filter_kwargs)
 
     # Calculate modulation index
     pac = np.abs(np.mean(hi * np.exp(1j * lo)))
@@ -348,7 +366,8 @@ def mi_canolty(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None,
     return (pac - np.mean(pacS)) / np.std(pacS)
 
 
-def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
+def ozkurt(lo, hi, f_lo, f_hi, fs=1000, w_lo=3, w_hi=3,
+           filterfn=None, filter_kwargs=None):
     """
     Calculate PAC using the method defined in Ozkurt & Schnitzler, 2011
 
@@ -362,6 +381,10 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
         The low frequency filtering range
     f_hi : (low, high), Hz
         The low frequency filtering range
+    w_lo : float
+        Number of cycles for the filter order of the low band-pass filter
+    w_hi : float
+        Number of cycles for the filter order of the low band-pass filter
     fs : float
         The sampling rate (default = 1000Hz)
     filterfn : functional
@@ -395,8 +418,8 @@ def ozkurt(lo, hi, f_lo, f_hi, fs=1000, filterfn=None, filter_kwargs=None):
     0.48564417921240238
     """
 
-    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, filterfn=filterfn,
-                       filter_kwargs=filter_kwargs)
+    lo, hi = pa_series(lo, hi, f_lo, f_hi, fs=fs, w_lo=w_lo, w_hi=w_hi,
+                       filterfn=filterfn, filter_kwargs=filter_kwargs)
 
     # Calculate PAC
     pac = np.abs(np.sum(hi * np.exp(1j * lo))) / \
@@ -692,9 +715,9 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     _x_sanity(lo, hi)
     _range_sanity(p_range, a_range)
     if dp <= 0:
-        raise ValueError('Width of lo frequqnecy range must be positive')
+        raise ValueError('Width of lo frequency range must be positive')
     if da <= 0:
-        raise ValueError('Width of hi frequqnecy range must be positive')
+        raise ValueError('Width of hi frequency range must be positive')
 
     # method check
     method2fun = {'plv': plv, 'mi_tort': mi_tort, 'mi_canolty': mi_canolty,
@@ -723,8 +746,8 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     return comod
 
 
-def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None,
-              filter_kwargs=None, hi_phase=False):
+def pa_series(lo, hi, f_lo, f_hi, fs=1000, w_lo=3, w_hi=3,
+              filterfn=None, filter_kwargs=None, hi_phase=False):
     """
     Calculate the phase and amplitude time series
 
@@ -738,6 +761,10 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None,
         The low frequency filtering range
     f_hi : (low, high), Hz
         The low frequency filtering range
+    w_lo : float
+        Number of cycles for the filter order of the low band-pass filter
+    w_hi : float
+        Number of cycles for the filter order of the low band-pass filter
     fs : float
         The sampling rate (default = 1000Hz)
     filterfn : function
@@ -783,8 +810,8 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None,
     # Filter then hilbert
     if filterfn is not False:
         _range_sanity(f_lo, f_hi)
-        lo = filterfn(lo, f_lo, fs, **filter_kwargs)
-        hi = filterfn(hi, f_hi, fs, **filter_kwargs)
+        lo = filterfn(lo, f_lo, fs, w=w_lo, **filter_kwargs)
+        hi = filterfn(hi, f_hi, fs, w=w_hi, **filter_kwargs)
 
         lo = np.angle(hilbert(lo))
         hi = np.abs(hilbert(hi))
@@ -792,7 +819,7 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000, filterfn=None,
         # if high frequency should be returned as phase of low-frequency
         # component of the amplitude:
         if hi_phase == True:
-            hi = filterfn(hi, f_lo, fs, **filter_kwargs)
+            hi = filterfn(hi, f_lo, fs, w=w_lo, **filter_kwargs)
             hi = np.angle(hilbert(hi))
 
         # Make arrays the same size
