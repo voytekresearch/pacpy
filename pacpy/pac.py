@@ -687,6 +687,8 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000, w_lo=3, w_hi=3,
         'ozkurt' - See Ozkurt & Schnitzler, 2011
     filterfn : function
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
+        In this case, filter functions should NOT remove edge artifact. Edge
+        artifacts will be removed based on the frequency and 'w_lo' parameter
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
 
@@ -725,24 +727,49 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000, w_lo=3, w_hi=3,
     pac_fun = method2fun.get(pac_method, None)
     if pac_fun == None:
         raise ValueError('PAC method given is invalid.')
+        
+    # Filter setup
+    if filterfn is None:
+        filterfn = firf
+        if filter_kwargs is None:
+            filter_kwargs = {'rmvedge':False}
+    else:
+        if filter_kwargs is None:
+            filter_kwargs = {}
+        
 
     # Calculate palette frequency parameters
     f_phases = np.arange(p_range[0], p_range[1], dp)
     f_amps = np.arange(a_range[0], a_range[1], da)
     P = len(f_phases)
     A = len(f_amps)
+    
+    # Calculate all phase time series
+    phaseT = np.zeros(P,dtype=object)
+    filterlens = np.zeros(P,dtype=int)
+    for p in range(P):
+        f_lo = (f_phases[p], f_phases[p] + dp)
+        loF = filterfn(lo, f_lo, fs, w=w_lo, **filter_kwargs)
+        phaseT[p] = np.angle(hilbert(loF))
+        filterlens[p] = np.int(w_lo*fs/np.float(f_lo[0]))
+        if filterlens[p] >= len(lo)/2.:
+            raise ValueError('The input signal is too short to estimate PAC without edge artifacts')
+    
+    # Calculate all amplitude time series
+    ampT = np.zeros(A,dtype=object)
+    for a in range(A):
+        f_hi = (f_amps[a], f_amps[a] + da)
+        hiF = filterfn(hi, f_hi, fs, w=w_hi, **filter_kwargs)
+        ampT[a] = np.abs(hilbert(hiF))
+        if pac_method == 'plv':
+            ampT[a] = filterfn(ampT[a], f_lo, fs, w=w_lo, **filter_kwargs)
+            ampT[a] = np.angle(hilbert(ampT[a]))
 
     # Calculate PAC for every combination of P and A
     comod = np.zeros((P, A))
     for p in range(P):
-        f_lo = (f_phases[p], f_phases[p] + dp)
-
         for a in range(A):
-            f_hi = (f_amps[a], f_amps[a] + da)
-
-            comod[p, a] = pac_fun(lo, hi, f_lo, f_hi, fs=fs, w_lo=w_lo, w_hi=w_hi,
-                                  filterfn=filterfn, filter_kwargs=filter_kwargs)
-
+            comod[p, a] = pac_fun(phaseT[p][filterlens[p]:-filterlens[p]], ampT[a][filterlens[p]:-filterlens[p]], [], [], fs=fs, filterfn=False)
     return comod
 
 
