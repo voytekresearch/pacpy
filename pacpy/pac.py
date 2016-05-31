@@ -756,7 +756,7 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000, w_lo=3, w_hi=3,
     for a in range(A):
         f_hi = (f_amps[a], f_amps[a] + da)
         hiF = filterfn(hi, f_hi, fs, w=w_hi, **filter_kwargs)
-        ampT[a] = np.angle(hilbert(hiF))
+        ampT[a] = np.abs(hilbert(hiF))
         if pac_method == 'plv':
             ampT[a] = filterfn(ampT[a], f_lo, fs, w=w_lo, **filter_kwargs)
             ampT[a] = np.angle(hilbert(ampT[a]))
