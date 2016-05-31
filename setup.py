@@ -3,13 +3,13 @@ from setuptools import setup, find_packages
 
 setup(
     name='pacpy',
-    version='1.0.2',
+    version='1.0.3',
     description="A module to calculate phase-amplitude coupling",
     long_description = """
     A module to calculate phase-amplitude coupling of neural time series.
     """,
     url='https://github.com/voytekresearch/pacpy',
-    download_url = 'https://github.com/voytekresearch/pacpy/archive/v1.0.tar.gz',
+    download_url = 'https://github.com/voytekresearch/pacpy/archive/1.0.3.tar.gz',
     author='The Voytek Lab',
     author_email='voyteklab@gmail.com',
     license='MIT',
