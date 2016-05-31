@@ -688,7 +688,7 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000, w_lo=3, w_hi=3,
     filterfn : function
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
         In this case, filter functions should NOT remove edge artifact. Edge
-        artifacts will remain in signal.
+        artifacts will be removed based on the frequency and 'w_lo' parameter
     filter_kwargs : dict
         Keyword parameters to pass to `filterfn(.)`
 
