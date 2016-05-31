@@ -746,10 +746,14 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000, w_lo=3, w_hi=3,
     
     # Calculate all phase time series
     phaseT = np.zeros(P,dtype=object)
+    filterlens = np.zeros(P,dtype=int)
     for p in range(P):
         f_lo = (f_phases[p], f_phases[p] + dp)
         loF = filterfn(lo, f_lo, fs, w=w_lo, **filter_kwargs)
         phaseT[p] = np.angle(hilbert(loF))
+        filterlens[p] = np.int(w_lo*fs/np.float(f_lo[0]))
+        if filterlens[p] >= len(lo)/2.:
+            raise ValueError('The input signal is too short to estimate PAC without edge artifacts')
     
     # Calculate all amplitude time series
     ampT = np.zeros(A,dtype=object)
@@ -765,8 +769,7 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000, w_lo=3, w_hi=3,
     comod = np.zeros((P, A))
     for p in range(P):
         for a in range(A):
-            comod[p, a] = pac_fun(phaseT[p], ampT[a], f_lo, f_hi, fs=fs, filterfn=False)
-
+            comod[p, a] = pac_fun(phaseT[p][filterlens[p]:-filterlens[p]], ampT[a][filterlens[p]:-filterlens[p]], [], [], fs=fs, filterfn=False)
     return comod
 
 
