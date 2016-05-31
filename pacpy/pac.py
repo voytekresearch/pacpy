@@ -656,7 +656,7 @@ def _morletT(x, f0s, w=3, fs=1000, s=1):
     return mwt
 
 
-def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
+def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000, w_lo=3, w_hi=3,
                  pac_method='mi_tort',
                  filterfn=None, filter_kwargs=None):
     """
@@ -740,7 +740,7 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
         for a in range(A):
             f_hi = (f_amps[a], f_amps[a] + da)
 
-            comod[p, a] = pac_fun(lo, hi, f_lo, f_hi, fs=fs,
+            comod[p, a] = pac_fun(lo, hi, f_lo, f_hi, fs=fs, w_lo=w_lo, w_hi=w_hi,
                                   filterfn=filterfn, filter_kwargs=filter_kwargs)
 
     return comod
