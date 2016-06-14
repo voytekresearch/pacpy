@@ -6,6 +6,67 @@ from scipy.signal import firwin2, firwin
 from scipy.signal import morlet
 
 
+def firmorlet(x, f_range, fs=1000, s=1, norm='sss', rmvedge = True):
+    """
+    This function applies a morlet filter in which the defined
+    cutoff frequencies have attenuation of -3dB. It returns only the
+    real component.
+
+    x : array-like, 1d
+        Time series to filter
+    f_range : (low, high), Hz
+        Cutoff frequencies of bandpass filter
+    fs : float, Hz
+        Sampling rate
+    s : float
+        Scaling factor for the morlet wavelet
+    norm : string
+        Normalization method
+        'sss' - divide by the sqrt of the sum of squares of points
+        'amp' - divide by the sum of amplitudes divided by 2
+    rmvedge : boolean
+        Option to remove edge artifacts or keep them in
+
+    Returns
+    -------
+    x_filt : array-like, 1d
+        Filtered time series
+
+    Returns
+    -------
+    x_trans : array
+        Complex time series
+    """
+    
+    # Calculate number of cycles from bandwidth
+    bandwidth = f_range[1] - f_range[0]
+    f0 = np.mean(f_range)
+    w = 1.7 * f0 / bandwidth
+
+    # Caculate filter length
+    M = 2 * s * w * fs / f0
+
+    # Design filter
+    morlet_f = morlet(M, w=w, s=s)
+
+    # Normalize by sum of squared amplitude
+    if norm == 'sss':
+        morlet_f = morlet_f / np.sqrt(np.sum(np.abs(morlet_f)**2))
+    elif norm == 'abs':
+        morlet_f = morlet_f / np.sum(np.abs(morlet_f)) * 2
+    else:
+        raise ValueError('Not a valid wavelet normalization method.')
+
+    # Apply filter
+    x_filt = np.convolve(x, np.real(morlet_f), mode='same')
+
+    # Remove edge artifacts
+    if rmvedge:
+        return _remove_edge(x_filt, M)
+    else:
+        return x_filt
+
+
 def firf(x, f_range, fs=1000, w=3, rmvedge = True):
     """
     Filter signal with an FIR filter
@@ -123,7 +184,7 @@ def firfls(x, f_range, fs=1000, w=3, tw=.15):
 
     # Remove edge artifacts
     return _remove_edge(x_filt, Ntaps)
-
+    
 
 def morletf(x, f0, fs=1000, w=3, s=1, M=None, norm='sss'):
     """
