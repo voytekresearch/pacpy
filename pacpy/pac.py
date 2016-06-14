@@ -63,10 +63,10 @@ def plv(lo, hi, f_lo, f_hi, fs=1000, w_lo=3, w_hi=3,
     filterfn : function, False
         The filtering function, `filterfn(x, f_range, filter_kwargs)`
 
-        False activates 'EXPERT MODE'. 
-        - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING! 
-        - In expert mode the user needs to filter the data AND apply the 
-        hilbert transform. 
+        False activates 'EXPERT MODE'.
+        - DO NOT USE THIS FLAG UNLESS YOU KNOW WHAT YOU ARE DOING!
+        - In expert mode the user needs to filter the data AND apply the
+        hilbert transform.
         - This requires that 'lo' be the phase time series of the low-bandpass
         filtered signal, and 'hi' be the phase time series of the low-bandpass
         of the amplitude of the high-bandpass of the original signal.
