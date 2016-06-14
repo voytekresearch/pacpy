@@ -4,9 +4,8 @@ Functions to calculate phase-amplitude coupling.
 """
 from __future__ import division
 import numpy as np
-from scipy.signal import hilbert
-from scipy.stats.mstats import zscore
-from pacpy.filt import firmorlet, firf, morletf
+import scipy as sp
+from pacpy.filt import firmorlet, firf
 
 
 def _x_sanity(lo=None, hi=None):
@@ -498,14 +497,14 @@ def comodulogram(lo, hi, p_range, a_range, dp, da, fs=1000,
     for p in range(P):
         f_lo = (f_phases[p], f_phases[p] + dp)
         loF = filterfn(lo, f_lo, fs, **filter_kwargs)
-        phaseT[p] = np.angle(hilbert(loF))
+        phaseT[p] = np.angle(sp.signal.hilbert(loF))
     
     # Calculate all amplitude time series
     ampT = np.zeros(A,dtype=object)
     for a in range(A):
         f_hi = (f_amps[a], f_amps[a] + da)
         hiF = filterfn(hi, f_hi, fs, **filter_kwargs)
-        ampT[a] = np.abs(hilbert(hiF))
+        ampT[a] = np.abs(sp.signal.hilbert(hiF))
 
     # Calculate PAC for every combination of P and A
     comod = np.zeros((P, A))
@@ -571,10 +570,7 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000,
         filterfn = firf
 
     if filter_kwargs is None:
-        if filterfn == firf:
-            filter_kwargs = {}
-        else:
-            filter_kwargs = {}
+        filter_kwargs = {}
 
     # Filter then hilbert
     if filterfn is not False:
@@ -582,14 +578,14 @@ def pa_series(lo, hi, f_lo, f_hi, fs=1000,
         lo = filterfn(lo, f_lo, fs, **filter_kwargs)
         hi = filterfn(hi, f_hi, fs, **filter_kwargs)
 
-        lo = np.angle(hilbert(lo))
-        hi = np.abs(hilbert(hi))
+        lo = np.angle(sp.signal.hilbert(lo))
+        hi = np.abs(sp.signal.hilbert(hi))
 
         # if high frequency should be returned as phase of low-frequency
         # component of the amplitude:
         if hi_phase == True:
             hi = filterfn(hi, f_lo, fs, **filter_kwargs)
-            hi = np.angle(hilbert(hi))
+            hi = np.angle(sp.signal.hilbert(hi))
 
         # Make arrays the same size
         lo, hi = _trim_edges(lo, hi)

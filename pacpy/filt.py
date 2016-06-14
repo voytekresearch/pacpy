@@ -6,7 +6,7 @@ from scipy.signal import firwin2, firwin
 from scipy.signal import morlet
 
 
-def firmorlet(x, f_range, fs=1000, s=1, norm='sss', rmvedge = True):
+def firmorlet(x, f_range, fs, s=1, norm='sss', rmvedge = True):
     """
     This function applies a morlet filter in which the defined
     cutoff frequencies have attenuation of -3dB. It returns only the
@@ -67,7 +67,7 @@ def firmorlet(x, f_range, fs=1000, s=1, norm='sss', rmvedge = True):
         return x_filt
 
 
-def firf(x, f_range, fs=1000, w=3, rmvedge = True):
+def firf(x, f_range, fs, Ntaps = None, rmvedge = True):
     """
     Filter signal with an FIR filter
     *Like fir1 in MATLAB
@@ -78,10 +78,9 @@ def firf(x, f_range, fs=1000, w=3, rmvedge = True):
         Cutoff frequencies of bandpass filter
     fs : float, Hz
         Sampling rate
-    w : float
-        Length of the filter in terms of the number of cycles 
-        of the oscillation whose frequency is the low cutoff of the 
-        bandpass filter
+    Ntaps : int
+        Filter order (length in samples)
+        None defaults to 3 cycle lengths of low cutoff frequency
 
     Returns
     -------
@@ -89,18 +88,17 @@ def firf(x, f_range, fs=1000, w=3, rmvedge = True):
         Filtered time series
     """
 
-    if w <= 0:
-        raise ValueError(
-            'Number of cycles in a filter must be a positive number.')
-
     nyq = np.float(fs / 2)
     if np.any(np.array(f_range) > nyq):
         raise ValueError('Filter frequencies must be below nyquist rate.')
 
     if np.any(np.array(f_range) < 0):
         raise ValueError('Filter frequencies must be positive.')
-
-    Ntaps = np.floor(w * fs / f_range[0])
+        
+    # Default filter length is 3 cycle lengths
+    if Ntaps == None:
+        Ntaps = np.floor(3 * fs / f_range[0])
+        
     if len(x) < Ntaps:
         raise RuntimeError(
             'Length of filter is loger than data. '
@@ -121,7 +119,7 @@ def firf(x, f_range, fs=1000, w=3, rmvedge = True):
         return x_filt
 
 
-def firfls(x, f_range, fs=1000, w=3, tw=.15):
+def firfls(x, f_range, fs, w=3, tw=.15):
     """
     Filter signal with an FIR filter
     *Like firls in MATLAB
