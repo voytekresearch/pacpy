@@ -1,7 +1,7 @@
 # pacpy
 [![Build Status](https://travis-ci.org/voytekresearch/pacpy.svg)](https://travis-ci.org/voytekresearch/pacpy)
 
-A module to calculate phase-amplitude coupling in Python.
+A module to calculate phase-amplitude coupling in Python. This module is in a stable, perfectly usable, state, and will no longer be updated.
 
 ## Demo
 
