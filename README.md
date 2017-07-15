@@ -1,7 +1,11 @@
 # pacpy
 [![Build Status](https://travis-ci.org/voytekresearch/pacpy.svg)](https://travis-ci.org/voytekresearch/pacpy)
+[![Project Status: Inactive – The project has reached a stable, usable state but is no longer being actively developed; support/maintenance will be provided as time allows.](http://www.repostatus.org/badges/latest/inactive.svg)](http://www.repostatus.org/#inactive)
 
-A module to calculate phase-amplitude coupling in Python. This module is in a stable, perfectly usable, state, and will no longer be updated.
+A module to calculate phase-amplitude coupling in Python.
+
+## Note: pactools
+Pacpy is no longer actively supported, but it is in a stable state. For an actively maintained package, we recommend [pactools](https://github.com/pactools/pactools). Note that these two packages may give different results when using the default filter parameters.
 
 ## Demo
 
